@@ -31,14 +31,20 @@ class ProductLine(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(64), nullable=False, unique=True)
     description = db.Column(db.String(64), nullable=True, unique=False)
+    features = db.relationship('Feature', backref='features', lazy='dynamic')
 
     def __repr__(self):
-        return str({'id':self.id, 'name':self.name, 'description':self.description})
+        return str({'id':self.id, 'name':self.name, 'description':self.description,
+     'features':self.features})
 
 class Client(db.Model):
     __tablename__ = 'clients'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(64), nullable=False, unique=True)
+    features = db.relationship('Feature', backref='features', lazy='dynamic')
+
+    def __repr__(self):
+        return str({'id':self.id, 'name':self.name, 'features':self.features})
 
 class Feature(db.Model):
     __tablename__ = 'features'
@@ -49,6 +55,11 @@ class Feature(db.Model):
     target_date = db.Column(db.DateTime)
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
     product_line_id = db.Column(db.Integer, db.ForeignKey('product_lines.id'))
+
+    def __repr__(self):
+        return str({'id':self.id, 'title':self.title, 'description':self.description,
+     'priority':self.priority, 'target_date':self.target_date, 'client_id':self.client_id,
+     'product_line_id':self.product_line_id})
 
 with app.app_context():
     db.create_all()
