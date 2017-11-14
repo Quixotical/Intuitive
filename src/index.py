@@ -35,6 +35,20 @@ class ProductLine(db.Model):
     def __repr__(self):
         return str({'id':self.id, 'name':self.name, 'description':self.description})
 
+class Client(db.Model):
+    __tablename__ = 'clients'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(64), nullable=False, unique=True)
+
+class Feature(db.Model):
+    __tablename__ = 'features'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    title = db.Column(db.String(128))
+    description = db.Column(db.String(255))
+    priority = db.Column(db.Integer)
+    target_date = db.Column(db.DateTime)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
+    product_line_id = db.Column(db.Integer, db.ForeignKey('product_lines.id'))
 
 with app.app_context():
     db.create_all()
