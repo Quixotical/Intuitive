@@ -26,7 +26,7 @@ class User(db.Model):
     def __repr__(self):
         return str({'id':self.id, 'social_id':self.social_id, 'nickname':self.nickname, 'email':self.email})
 
-class ProductLines(db.Model):
+class ProductLine(db.Model):
     __tablename__ = 'product_lines'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(64), nullable=False, unique=True)
