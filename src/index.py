@@ -3,7 +3,6 @@ from flask import Flask
 from flask import Markup
 from flask import render_template
 from flask_sqlalchemy import SQLAlchemy
-import random
 
 app = Flask(__name__)
 
