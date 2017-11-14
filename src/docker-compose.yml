@@ -1,0 +1,23 @@
+version: '3'
+services:
+  src:
+    build: .
+    ports:
+      - "80:80"
+    links:
+      - db
+    depends_on:
+      - db
+    volumes:
+      - .:/opt/src
+
+  db:
+    image: mysql:5.7
+    volumes:
+      - /var/lib/mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: supersecure
+      MYSQL_DATABASE: feature_db
+      MYSQL_USER: intuitive_user
+      MYSQL_PASSWORD: supersecure
