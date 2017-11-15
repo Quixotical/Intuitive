@@ -1,9 +1,11 @@
 import os
-from flask import Flask, jsonify
-from flask import Markup
+from flask import Flask, jsonify, Markup, render_template, redirect, url_for
 from model_helpers import make_jsonifiable, update_model
-from flask import render_template
+from flask_login import LoginManager, UserMixin, login_user, logout_user,\
+    current_user
 from flask_sqlalchemy import SQLAlchemy
+from oauth2 import OAuthSignIn
+import config
 import time
 import datetime
 
@@ -12,14 +14,16 @@ app = Flask(__name__)
 # Configure MySQL connection.
 db = SQLAlchemy()
 
-db_uri = 'mysql://root:supersecure@db/feature_db'
-app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+lm = LoginManager(app)
+lm.login_view = 'login'
+
+app.config['SQLALCHEMY_DATABASE_URI'] = config.SQLALCHEMY_DATABASE_URI
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = config.SQLALCHEMY_TRACK_MODIFICATIONS
 
 with app.app_context():
     db.init_app(app)
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     social_id = db.Column(db.String(64), nullable=False, unique=True)
@@ -76,9 +80,51 @@ with app.app_context():
             time.sleep(5)
             wait_time = wait_time + 5
 
+@lm.user_loader
+def load_user(id):
+    return User.query.get(int(id))
+
 @app.route("/login")
 def login():
-    return jsonify({'receiving':'Hello'})
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+@app.route('/')
+@app.route('/index')
+def index():
+    if current_user.is_anonymous:
+        return render_template('login.html')
+
+    return render_template('index.html')
+@app.route('/auth/<provider>')
+def oauth_authorize(provider):
+    if not current_user.is_anonymous:
+        return redirect(url_for('index'))
+    oauth = OAuthSignIn.get_provider(provider)
+    return oauth.authorize()
+
+@app.route('/callback/<provider>')
+def oauth_callback(provider):
+    if not current_user.is_anonymous:
+        return redirect(url_for('login'))
+    oauth = OAuthSignIn.get_provider(provider)
+    social_id, username, email = oauth.callback()
+    if social_id is None:
+        return redirect(url_for('login'))
+    user = User.query.filter_by(social_id=social_id).first()
+    if not user:
+        user = User(social_id=social_id, nickname=username, email=email)
+        db.session.add(user)
+        db.session.commit()
+    login_user(user, True)
+
+    return redirect(url_for('index'))
 
 if __name__ == "__main__":
+    app.secret_key = 'super secret key'
+    app.config['SESSION_TYPE'] = 'filesystem'
     app.run(host="0.0.0.0", port=80)
