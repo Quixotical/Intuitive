@@ -98,8 +98,14 @@ def logout():
 def index():
     if current_user.is_anonymous:
         return render_template('login.html')
-
     return render_template('index.html')
+
+@app.route('/auth/google/<user_data>')
+def google_signin(user_data):
+    if not current_user.is_anonymous:
+        return redirect(url_for('index'))
+
+
 @app.route('/auth/<provider>')
 def oauth_authorize(provider):
     if not current_user.is_anonymous:
