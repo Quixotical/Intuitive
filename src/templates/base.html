@@ -5,7 +5,12 @@
     <script src="https://apis.google.com/js/platform.js" async defer></script>
   </head>
   <body>
-    <div>Intuitive Web Solutions</div>
+    <div>Intuitive Web Solutions
+      {% if current_user.is_authenticated %}
+                  <h2>Hi, {{ current_user.nickname }}!</h2>
+                  <p><a href="{{ url_for('logout') }}">Logout</a></p>
+      {% endif %}
+    </div>
     <hr>
 
     {% block content %}{% endblock %}
