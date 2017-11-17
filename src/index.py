@@ -4,10 +4,12 @@ from model_helpers import make_jsonifiable, update_model
 from flask_login import LoginManager, UserMixin, login_user, logout_user,\
     current_user
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy_utils import PasswordType, force_auto_coercion
 from oauth2 import OAuthSignIn
 import config
 import time
 import datetime
+import re
 
 app = Flask(__name__)
 
@@ -23,12 +25,22 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = config.SQLALCHEMY_TRACK_MODIFICAT
 with app.app_context():
     db.init_app(app)
 
+force_auto_coercion()
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     social_id = db.Column(db.String(64), nullable=False, unique=True)
     nickname = db.Column(db.String(64), nullable=False)
     email = db.Column(db.String(64), nullable=False)
+    password = db.Column(PasswordType(
+        schemes=[
+            'pbkdf2_sha512',
+            'md5_crypt'
+        ],
+
+        deprecated=['md5_crypt']
+    ), nullable=True)
 
     def __repr__(self):
         return str({'id':self.id, 'social_id':self.social_id, 'nickname':self.nickname, 'email':self.email})
@@ -84,7 +96,7 @@ with app.app_context():
 def load_user(id):
     return User.query.get(int(id))
 
-@app.route("/login")
+@app.route("/login", methods=['GET', 'POST'])
 def login():
     return render_template('login.html')
 
