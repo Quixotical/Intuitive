@@ -1,5 +1,6 @@
 flask
 flask-sqlalchemy
+sqlalchemy-utils
 mysql-python
 rauth==0.7.0
 flask-login
