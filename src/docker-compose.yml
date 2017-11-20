@@ -13,11 +13,18 @@ services:
 
   src:
     build: .
-    ports:
-      - "80:80"
     links:
       - db
+    ports:
+      - "7777:80"
     depends_on:
       - db
     volumes:
       - .:/opt/src
+
+  web:
+    build: ../front-end
+    ports:
+      - "80:80"
+    volumes:
+      - ../front-end:/opt/src/app

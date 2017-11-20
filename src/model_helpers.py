@@ -2,13 +2,14 @@ def make_jsonifiable(model, data=[]):
     if data is None:
         return None
 
-    keys = [column.key for column in model.__table__.columns]
+    keys = [column.key for column in model.__table__.columns if column.key is not 'password']
     json_data = []
     try:
         for row in data:
             json_row = {}
             for key in keys:
-                json_row.update({key : getattr(row,key)})
+                if key is not 'password':
+                    json_row.update({key : getattr(row,key)})
 
             json_data.append(json_row)
         return json_data

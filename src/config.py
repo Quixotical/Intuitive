@@ -4,6 +4,6 @@ OAUTH_CREDENTIALS = {
         'secret': '909e62e688ed787024782ea152a9cb87'
     }
 }
-
+SECRET_KEY = 'My Key is Super Secret!~#'
 SQLALCHEMY_DATABASE_URI = 'mysql://root:supersecure@db/feature_db'
 SQLALCHEMY_TRACK_MODIFICATIONS = False

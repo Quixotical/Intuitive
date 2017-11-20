@@ -1,0 +1,44 @@
+  <h2 class="text-center">Create new feature</h2>
+  <form>
+    <div class="form-group">
+      <label for="title">Feature Title</label>
+      <input type="text" class="form-control" id="title" placeholder="Enter feature title">
+    </div>
+    <div class="form-group">
+      <div class="row">
+        <div class="col">
+          <label for="client">Client</label>
+          <select class="form-control">
+            <option>Client A</option>
+            <option>Client B</option>
+            <option>Client C</option>
+          </select>
+        </div>
+
+        <div class="col">
+          <label for="product-area">Product Area</label>
+          <select class="form-control" id="product-area">
+            <option>Policies</option>
+            <option>Billing</option>
+            <option>Claims</option>
+            <option>Reports</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="priority">Client Priority</label>
+      <input type="text" id="priority" class="form-control" placeholder="Choose priority">
+    </div>
+    <div class="form-group">
+      <label for="target-date">Target Date</label>
+      <input type="date" id="target-date" class="form-control">
+    </div>
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea class="form-control" rows="3"></textarea>
+    </div>
+    <div class="text-center">
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+  </form>

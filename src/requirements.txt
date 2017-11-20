@@ -4,4 +4,7 @@ sqlalchemy-utils
 passlib
 mysql-python
 rauth==0.7.0
-flask-login
+flask-restful
+flask-cors
+itsdangerous
+flask_httpauth
