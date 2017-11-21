@@ -8,3 +8,4 @@ flask-restful
 flask-cors
 itsdangerous
 flask_httpauth
+passlib
