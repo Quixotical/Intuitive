@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_utils import PasswordType, force_auto_coercion
 from flask_cors import CORS
 import config
-import time, datetime, random, string
+import time, datetime, random, string, json
 from itsdangerous import TimedJSONWebSignatureSerializer as JWT
 from flask_httpauth import HTTPTokenAuth
 from passlib.apps import custom_app_context as pwd_context
@@ -105,7 +105,8 @@ def verify_token(token):
     except:
         return False
     if 'user' in data:
-        g.user = data['user']
+        social_id = data['user']
+        g.user = User.query.filter_by(social_id=social_id).first()
         return True
     return False
 
@@ -128,6 +129,7 @@ class RegisterAPI(Resource):
                                     location='json')
         self.reqparse.add_argument('email', type=validate_email, location='json')
         self.reqparse.add_argument('email', type=validate_non_social, location='json')
+        self.reqparse.add_argument('email', type=validate_new_email, location='json')
         super(RegisterAPI, self).__init__()
 
     def post(self):
@@ -152,18 +154,29 @@ class RegisterAPI(Resource):
 
         formatted_user = make_jsonifiable(User, user)
 
-        token = jwt.dumps({'user': formatted_user})
+        token = jwt.dumps({'user':user.social_id})
 
         return {'auth_token': token}, 201
 
-def validate_non_social(value):
+def validate_exists(value):
     user = User.query.filter_by(email=value).first()
     if user is None:
         raise ValueError('User does not exist for this email!')
+    return value
+
+def validate_non_social(value):
+    user = User.query.filter_by(email=value).first()
     if user and "non_social" not in user.social_id:
         raise ValueError('Social User already created. Log in with Google')
     if not user.verify_password(password):
         raise ValueError('Invalid email or password')
+    return value
+
+def validate_new_email(value):
+    user = User.query.filter_by(email=value).first()
+    if user is not None:
+        raise ValueError('User already exist for this email!')
+    return value
 
 register_fields = {
     'email': fields.String,
@@ -177,6 +190,7 @@ class LoginAPI(Resource):
         self.reqparse.add_argument('password', type=password_length,
                                     location='json')
         self.reqparse.add_argument('email', type=validate_email, location='json')
+        self.reqparse.add_argument('email', type=validate_exists, location='json')
         self.reqparse.add_argument('email', type=validate_non_social, location='json')
         super(RegisterAPI, self).__init__()
 
@@ -189,9 +203,8 @@ class LoginAPI(Resource):
         g.user = user
         formatted_user = make_jsonifiable(User, user)
 
-        token = jwt.dumps({'user': formatted_user})
+        token = jwt.dumps({'user':user.social_id})
         return {'token': token}
-
 
 class UserAPI(Resource):
     def get(self, id):
@@ -233,13 +246,27 @@ class GoogleLogin(Resource):
             db.session.commit()
 
         formatted_user = make_jsonifiable(User, user)
-        token = jwt.dumps({'user': formatted_user})
+        token = jwt.dumps({'user':user.social_id})
 
-        return {'token': token, 'user': formatted_user}
+        return {'token': token}
+
+class HomeAPI(Resource):
+    @auth.login_required
+    def get(self):
+        return {'email':g.user.email, 'fullname':g.user.fullname}
+        features = FeatureRequest.query.all()
+        # userFeatures = FeatureRequest.query.
+
+class VerifyAuthAPI(Resource):
+    @auth.login_required
+    def get(self):
+        return {'message':'success'}
 
 api = Api(app)
+api.add_resource(HomeAPI, '/', endpoint='home')
 api.add_resource(UserAPI, '/users/<int:id>', endpoint='user')
 api.add_resource(RegisterAPI, '/register', endpoint='register')
+api.add_resource(VerifyAuthAPI, '/auth/verify', endpoint='auth')
 api.add_resource(LoginAPI, '/login', endpoint='login')
 api.add_resource(GoogleLogin, '/login/google', endpoint='google_login')
 
