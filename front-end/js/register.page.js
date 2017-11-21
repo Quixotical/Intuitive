@@ -12,7 +12,7 @@ export default (container) => {
         password: formFields.password(),
       })
         .then((resp)=> {
-          window.sessionStorage.token = resp.auth_token;
+          window.sessionStorage.setItem('token', resp.data.auth_token)
         })
         .catch(({ response }) => {
           //TODO display error messages

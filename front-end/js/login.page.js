@@ -8,7 +8,7 @@ export default (container) => {
       script.src = "https://apis.google.com/js/platform.js"
 
       document.head.appendChild(script);
-    },
+    }
   }
   viewModel.dynamicallyLoadScript();
 }

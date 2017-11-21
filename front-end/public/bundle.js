@@ -17,7 +17,7 @@ var registerPage = (container) => {
         password: formFields.password(),
       })
         .then((resp)=> {
-          window.sessionStorage.token = resp.auth_token;
+          window.sessionStorage.setItem('token', resp.data.auth_token);
         })
         .catch(({ response }) => {
           //TODO display error messages
@@ -38,26 +38,72 @@ var loginPage = (container) => {
       script.src = "https://apis.google.com/js/platform.js";
 
       document.head.appendChild(script);
-    },
+    }
   };
   viewModel.dynamicallyLoadScript();
 };
 
-const renderContent = (templateName, callback) => {
+const verifyUser = (ctx, next) => {
+  let token = window.sessionStorage.token;
+
+  let authPromise = new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("GET", "http://localhost:7777/auth/verify", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
+    xhr.onload = () => {
+      if(xhr.status > 299){
+        resolve(false);
+      }
+      resolve(true);
+    };
+    xhr.onerror = () => {console.log('lock out');reject(xhr.statusText);};
+    xhr.send();
+  });
+
+  authPromise
+    .then((authorized) => {
+      ctx.authorized = authorized;
+      next();
+    })
+    .catch((error) => {
+      console.error('error verifying user', error);
+      ctx.authorized = false;
+      next();
+    });
+};
+
+const fetchPage = (templateName, callback) => {
   fetch(`/templates/${templateName}.html`)
-		.then(response => response.text())
-		.then( html => {
+    .then(response => response.text())
+    .then( html => {
       const div = document.createElement('div');
       div.id = 'container';
       document.querySelector('#container').replaceWith(div);
-	    div.innerHTML = html;
-	    callback && callback(div);
-	  });
+      div.innerHTML = html;
+      callback && callback(div);
+  });
 };
 
-page('/', function(){
-  console.log('wows');
+let renderContent = (templateName, callback) => {
+    fetchPage(templateName, callback);
+};
+
+let renderAuthContent = (templateName, callback, ctx, next) => {
+  if(ctx.authorized){
+    fetchPage(templateName, callback);
+  }else{
+    page('/login');
+  }
+};
+
+page('home', function(){
+  renderContent('home', null, credentials);
 });
+
+page('/index', verifyUser, renderAuthContent.bind(window,'feature', null));
+
+page('/', verifyUser, renderAuthContent.bind(window,'feature', null));
 
 page('/feature', function(){
   renderContent('feature');
@@ -70,33 +116,18 @@ page('/register', function(){
 page('/login', function(){
   renderContent('login', loginPage);
 });
-page(() => {
-  console.warn('oops');
-  page('/');
-});
 
-window.test = function() {
-  return 'pants'
-};
+page('*', function(){
+  page('/login');
+});
 
 window.onSignIn = function(googleUser) {
 
   var profile = googleUser.getBasicProfile();
-  console.log("ID: " + profile.getId());
-  console.log('Full Name: ' + profile.getName());
-  console.log('Given Name: ' + profile.getGivenName());
-  console.log('Family Name: ' + profile.getFamilyName());
-  console.log("Image URL: " + profile.getImageUrl());
-  console.log("Email: " + profile.getEmail());
-
-  var fullname = profile.getName();
-  var email = profile.getEmail();
-  var social_id = 'gogole'+profile.getId();
-
   var data = {
-    'fullname': fullname,
-    'email': email,
-    'social_id': social_id,
+    'fullname': profile.getName(),
+    'email': profile.getEmail(),
+    'social_id': 'gogole'+profile.getId(),
   };
   var xml = new XMLHttpRequest();
   xml.open("POST", "http://localhost:7777/login/google", true);
@@ -105,6 +136,7 @@ window.onSignIn = function(googleUser) {
     if(xml.readyState == XMLHttpRequest.DONE){
       if (xml.status === 200) {
         var response = JSON.parse(xml.responseText);
+        window.sessionStorage.setItem('token', response.token);
         console.log(response);
         console.log('woooo');
       }else{
@@ -114,24 +146,10 @@ window.onSignIn = function(googleUser) {
   };
   xml.send(JSON.stringify(data));
 };
-//   api.post('login/google', {
-//     'fullname': profile.getName(),
-//     'email': profile.getEmail(),
-//     'social_id': 'google'+profile.getId()
-//   })
-//   .then((data) => {
-//       console.log('wooo');
-//       console.log(data);
-//   })
-//   .catch((error) => {
-//     console.warn('error', error)
-//   })
-// }
 
 function ready(callback) {
   if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading"){
     callback();
-    test();
   } else {
     document.addEventListener('DOMContentLoaded', () => callback());
   }
