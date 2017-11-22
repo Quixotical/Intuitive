@@ -11,9 +11,10 @@
           <select data-bind="
           value: selectedClient,
           options: clients,
-          optionsText: 'clientName',
+          optionsText: 'name',
           optionsValue: 'id',
-          optionsCaption: '-- Select Clients --'
+          optionsCaption: '-- Select Clients --',
+          event: {change: checkPriority}
           " class="form-control" id='clients' name='clients'>
           </select>
         </div>
@@ -23,7 +24,7 @@
           <select data-bind="
           value: selectedProductArea,
           options: productAreas,
-          optionsText: 'productArea',
+          optionsText: 'name',
           optionsValue: 'id',
           optionsCaption: '-- Select Product Area --'
           " class="form-control" id="product-area" name='product-area'>
@@ -31,9 +32,31 @@
         </div>
       </div>
     </div>
-    <div class="form-group">
+    <!-- <div class="form-group">
       <label for="priority">Client Priority</label>
       <input data-bind="value: priority" type="text" id="priority" class="form-control" placeholder="Choose priority">
+    </div> -->
+
+    <div class="form-group" data-bind="
+    if: clientPriorities() !== null
+    ">
+      <label for="priority" class="feature-priority-label">Client Priority</label>
+      <div class="box-container" id="sortable">
+        <!-- ko if: clientPriorities().length == 0 -->
+          <div class="priority-box-new">1</div>
+        <!-- /ko -->
+
+        <!-- ko foreach: clientPriorities -->
+        <div class="priority-box shrink" data-bind="
+        attr: { 'data-priority': id }
+        "><p data-bind="text: title"></p></div>
+        <!-- /ko -->
+        <!-- ko ifnot: clientPriorities().length == 0 -->
+        <div class="priority-box new shrink">
+          <p> New Feature</p>
+        </div>
+        <!-- /ko -->
+      </div>
     </div>
     <div class="form-group">
       <label for="target-date">Target Date</label>
@@ -48,3 +71,4 @@
       <button type="submit" class="btn btn-primary">Submit</button>
     </div>
   </form>
+  <button data-bind="event: {click: testingClick}">test</button>

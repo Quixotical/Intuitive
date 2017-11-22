@@ -362,11 +362,16 @@ class ProductAreaAPI(Resource):
 
         return {'message': 'Success'}
 
-class RetrieveFeaturePriority(Resource):
+class RetrieveFeatureInfo(Resource):
     @auth.login_required
     def get(self):
         clients = Client.query.all()
-        client_list = []
+        formatted_clients = make_jsonifiable(Client, clients)
+
+        product_areas = ProductArea.query.all()
+        formatted_product_areas = make_jsonifiable(ProductArea, product_areas)
+
+        client_list = {}
 
         for client in clients:
             client_features = client.client_features.all()
@@ -375,9 +380,10 @@ class RetrieveFeaturePriority(Resource):
                 feature.target_date = str(feature.target_date)
 
             formatted_client_list = make_jsonifiable(FeatureRequest, client_features)
-            client_list.append({client.name: formatted_client_list})
+            client_list[client.name]= formatted_client_list
 
-        return {'test':client_list}
+        return {'clients_features':client_list, 'clients': formatted_clients,
+                'product_areas': formatted_product_areas}
 
 api = Api(app)
 api.add_resource(UserAPI, '/users/<int:id>', endpoint='user')
@@ -386,7 +392,7 @@ api.add_resource(VerifyAuthAPI, '/auth/verify', endpoint='auth')
 api.add_resource(LoginAPI, '/login', endpoint='login')
 api.add_resource(GoogleLogin, '/login/google', endpoint='google_login')
 api.add_resource(RetrieveFeatures, '/', endpoint='home')
-api.add_resource(RetrieveFeaturePriority, '/feature-priorities', endpoint='feature_priority')
+api.add_resource(RetrieveFeatureInfo, '/feature-priorities', endpoint='feature_priority')
 api.add_resource(FeatureRequestAPI, '/feature', endpoint='feature')
 api.add_resource(ClientAPI, '/client', endpoint='client')
 api.add_resource(ProductAreaAPI, '/product_area', endpoint='product_area')
