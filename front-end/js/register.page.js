@@ -1,6 +1,7 @@
 import api from './api';
 
 export default (container) => {
+
   var viewModel = {
     fullname: ko.observable(),
     email: ko.observable(),
@@ -12,14 +13,13 @@ export default (container) => {
         password: formFields.password(),
       })
         .then((resp)=> {
-          window.sessionStorage.setItem('token', resp.data.auth_token)
+          window.localStorage.setItem('token', resp.data.token)
+          page('/');
         })
         .catch(({ response }) => {
           //TODO display error messages
           console.warn('Error registering user', response.data.message)
         });
-
-      console.warn('ayy')
     }
   };
   ko.applyBindings(viewModel, container);

@@ -1,6 +1,6 @@
 import os
 from flask import Flask, g
-from flask_restful import Api, Resource, reqparse, fields, marshal
+from flask_restful import Api, Resource, reqparse, fields, marshal, abort
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_utils import PasswordType, force_auto_coercion
 from flask_cors import CORS
@@ -10,7 +10,7 @@ from itsdangerous import TimedJSONWebSignatureSerializer as JWT
 from flask_httpauth import HTTPTokenAuth
 from passlib.apps import custom_app_context as pwd_context
 
-from model_helpers import make_jsonifiable, update_model
+from model_helpers import make_jsonifiable, update_model, format_features
 from field_validators import password_length, fullname_length, validate_email
 
 
@@ -37,6 +37,7 @@ class User(db.Model):
     fullname = db.Column(db.String(64), nullable=False)
     email = db.Column(db.String(64), nullable=False)
     password_hash = db.Column(db.String(128), nullable=True)
+    user_features = db.relationship('FeatureRequest', backref='user_features', lazy='dynamic')
 
     def hash_password(self, password):
         self.password_hash = pwd_context.encrypt(password)
@@ -55,17 +56,16 @@ class ProductArea(db.Model):
     product_features = db.relationship('FeatureRequest', backref='product_features', lazy='dynamic')
 
     def __repr__(self):
-        return str({'id':self.id, 'name':self.name, 'description':self.description,
-     'features':self.features})
+        return str({'id':self.id, 'name':self.name, 'description':self.description})
 
 class Client(db.Model):
     __tablename__ = 'clients'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(64), nullable=False)
-    product_features = db.relationship('FeatureRequest', backref='client_features', lazy='dynamic')
+    client_features = db.relationship('FeatureRequest', backref='client_features', lazy='dynamic')
 
     def __repr__(self):
-        return str({'id':self.id, 'name':self.name, 'features':self.features})
+        return str({'id':self.id, 'name':self.name})
 
 class FeatureRequest(db.Model):
     __tablename__ = 'feature_requests'
@@ -76,6 +76,7 @@ class FeatureRequest(db.Model):
     target_date = db.Column(db.DateTime)
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'))
     product_area_id = db.Column(db.Integer, db.ForeignKey('product_areas.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
     def __repr__(self):
         return str({'id':self.id, 'title':self.title, 'description':self.description,
@@ -103,12 +104,12 @@ def verify_token(token):
     try:
         data = jwt.loads(token)
     except:
-        return False
+        abort(401, authorized=False)
     if 'user' in data:
         social_id = data['user']
         g.user = User.query.filter_by(social_id=social_id).first()
         return True
-    return False
+    abort(401, authorized=False)
 
 register_fields = {
     'fullname': fields.String,
@@ -128,7 +129,6 @@ class RegisterAPI(Resource):
         self.reqparse.add_argument('password', type=password_length,
                                     location='json')
         self.reqparse.add_argument('email', type=validate_email, location='json')
-        self.reqparse.add_argument('email', type=validate_non_social, location='json')
         self.reqparse.add_argument('email', type=validate_new_email, location='json')
         super(RegisterAPI, self).__init__()
 
@@ -156,7 +156,7 @@ class RegisterAPI(Resource):
 
         token = jwt.dumps({'user':user.social_id})
 
-        return {'auth_token': token}, 201
+        return {'token': token}, 201
 
 def validate_exists(value):
     user = User.query.filter_by(email=value).first()
@@ -166,10 +166,10 @@ def validate_exists(value):
 
 def validate_non_social(value):
     user = User.query.filter_by(email=value).first()
+    if user is None:
+        raise ValueError('No user exists for email')
     if user and "non_social" not in user.social_id:
         raise ValueError('Social User already created. Log in with Google')
-    if not user.verify_password(password):
-        raise ValueError('Invalid email or password')
     return value
 
 def validate_new_email(value):
@@ -192,15 +192,18 @@ class LoginAPI(Resource):
         self.reqparse.add_argument('email', type=validate_email, location='json')
         self.reqparse.add_argument('email', type=validate_exists, location='json')
         self.reqparse.add_argument('email', type=validate_non_social, location='json')
-        super(RegisterAPI, self).__init__()
+        super(LoginAPI, self).__init__()
 
-    def get(self):
+    def post(self):
         args = self.reqparse.parse_args()
         email = args['email']
         password = args['password']
 
         user = User.query.filter_by(email=email).first()
-        g.user = user
+        if not user.verify_password(password):
+            return {'error':'Invalid email or password'}, 400
+
+        g.user = user.feature_requests
         formatted_user = make_jsonifiable(User, user)
 
         token = jwt.dumps({'user':user.social_id})
@@ -250,27 +253,145 @@ class GoogleLogin(Resource):
 
         return {'token': token}
 
-class HomeAPI(Resource):
-    @auth.login_required
-    def get(self):
-        return {'email':g.user.email, 'fullname':g.user.fullname}
-        features = FeatureRequest.query.all()
-        # userFeatures = FeatureRequest.query.
-
 class VerifyAuthAPI(Resource):
     @auth.login_required
     def get(self):
-        return {'message':'success'}
+        return {'authorized': True}
+
+class FeatureRequestAPI(Resource):
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument('title', type=str, required=True,
+                                    help='Title not provided',
+                                    location='json')
+        self.reqparse.add_argument('description', type=str, required=True,
+                                    location='json', help='Description required')
+        self.reqparse.add_argument('client_id', type=str, required=True,
+                                    help='Client required', location='json')
+        self.reqparse.add_argument('product_area_id', type=str, location='json',
+                                    required=True,
+                                    help='Product Area required')
+        self.reqparse.add_argument('target_date', type=str, required=True,
+                                    help='Target Date required')
+        self.reqparse.add_argument('priority', type=str,
+                                    required=True,
+                                    help='Must select client priority')
+        super(FeatureRequestAPI, self).__init__()
+
+    @auth.login_required
+    def post(self):
+        args = self.reqparse.parse_args()
+
+        try:
+            feature = FeatureRequest(
+                title=args['title'],
+                description=args['description'],
+                client_id=args['client_id'],
+                product_area_id=args['product_area_id'],
+                target_date=args['target_date'],
+                priority=args['priority'],
+                user_id=g.user.id
+            )
+            db.session.add(feature)
+            db.session.commit()
+            return {'message': 'created'}
+        except Exception:
+            return {'error': 'Error saving Feature'}, 400
+
+class RetrieveFeatures(Resource):
+    @auth.login_required
+    def get(self):
+        try:
+            features = FeatureRequest.query.all()
+            user_features = FeatureRequest.query.join(User).filter(FeatureRequest.user_id == g.user.id).all()
+
+
+            formatted_features = format_features(FeatureRequest, features)
+
+            for feature in user_features:
+                feature.target_date = str(feature.target_date)
+
+            formatted_user_features = make_jsonifiable(FeatureRequest, user_features);
+
+            return {'features': formatted_features, 'user_features': formatted_user_features,
+                    'user_name': g.user.fullname}
+        except Exception:
+            return {'error': 'Server error'}, 500
+
+class ClientAPI(Resource):
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument('name', type=str, required=True,
+                                    help='Name not provided',
+                                    location='json')
+        super(ClientAPI, self).__init__()
+
+    @auth.login_required
+    def post(self):
+        args = self.reqparse.parse_args()
+
+        client = Client(
+            name=args['name']
+        )
+        db.session.add(client)
+        db.session.commit()
+
+        return {'message': 'Success'}
+
+class ProductAreaAPI(Resource):
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument('name', type=str, required=True,
+                                    help='Name not provided',
+                                    location='json')
+        self.reqparse.add_argument('description', type=str, required=True,
+                                    help='Description not provided',
+                                    location='json')
+        super(ProductAreaAPI, self).__init__()
+
+    @auth.login_required
+    def post(self):
+        args = self.reqparse.parse_args()
+
+        product_area = ProductArea(
+            name=args['name'],
+            description=args['description']
+        )
+        db.session.add(product_area)
+        db.session.commit()
+
+        return {'message': 'Success'}
+
+class RetrieveFeaturePriority(Resource):
+    @auth.login_required
+    def get(self):
+        clients = Client.query.all()
+        client_list = []
+
+        for client in clients:
+            client_features = client.client_features.all()
+
+            for feature in client_features:
+                feature.target_date = str(feature.target_date)
+
+            formatted_client_list = make_jsonifiable(FeatureRequest, client_features)
+            client_list.append({client.name: formatted_client_list})
+
+        return {'test':client_list}
 
 api = Api(app)
-api.add_resource(HomeAPI, '/', endpoint='home')
 api.add_resource(UserAPI, '/users/<int:id>', endpoint='user')
 api.add_resource(RegisterAPI, '/register', endpoint='register')
 api.add_resource(VerifyAuthAPI, '/auth/verify', endpoint='auth')
 api.add_resource(LoginAPI, '/login', endpoint='login')
 api.add_resource(GoogleLogin, '/login/google', endpoint='google_login')
+api.add_resource(RetrieveFeatures, '/', endpoint='home')
+api.add_resource(RetrieveFeaturePriority, '/feature-priorities', endpoint='feature_priority')
+api.add_resource(FeatureRequestAPI, '/feature', endpoint='feature')
+api.add_resource(ClientAPI, '/client', endpoint='client')
+api.add_resource(ProductAreaAPI, '/product_area', endpoint='product_area')
 
 if __name__ == "__main__":
     app.secret_key = app.config['SECRET_KEY']
     app.config['SESSION_TYPE'] = 'filesystem'
-    app.run(host="0.0.0.0", port=80)
+    app.run(host="0.0.0.0", port=80, threaded=True)

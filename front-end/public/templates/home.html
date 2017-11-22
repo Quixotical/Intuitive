@@ -1,3 +1,51 @@
-<div>
-  HELLO HOME
+<!-- <div id="loading">
+  <h1 data-bind="text: loading"></h1>
 </div>
+<div data-bind="foreach: features">
+  <p data-bind="text: title"></p>
+  <p data-bind="text: description"></p>
+</div>
+<div data-bind="foreach: userFeatures">
+  <p data-bind="text: title"></p>
+  <p data-bind="text: description"></p>
+</div> -->
+
+<div class="features" data-bind="foreach: features">
+  <div class="feature">
+    <div class="row title">
+        <div class="col-md-3 username" data-bind="text: user_name"></div>
+        <div class="col-md-6 feature-title" data-bind="text: title"></div>
+        <div class="col-md-3 priority"><p>Priority: <span data-bind="text: priority"></span></p></div>
+    </div>
+    <div class="row details">
+        <div class="col-md-4 client" data-bind="text: client_name"></div>
+        <div class="col-md-4 product" data-bind="text: product_name"></div>
+        <div class="col-md-4 target-date" data-bind="text: target_date"></div>
+    </div>
+    <div class="row description">
+        <div class="col-md-12 description" data-bind="text: description"></div>
+    </div>
+    <div class="row feature-buttons">
+      <div class="col-md-4"><button class="btn btn-primary">Edit Feature</button></div>
+      <div class="col-md-4"></div>
+      <div class="col-md-4"><button class="btn btn-danger">Delete Feature</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- <div class="features" data-bind="foreach: userFeatures">
+  <div class="row">
+      <div class="col-md-2">Jake Boomgaarden</div>
+      <div class="col-md-9">Feature Number One</div>
+      <div class="col-md-1">10</div>
+  </div>
+  <div class="row">
+      <div class="col-md-4">Client A</div>
+      <div class="col-md-4">Billing</div>
+      <div class="col-md-4">10/10/2017</div>
+  </div>
+  <div class="row">
+      <div class="col-md-8">Description: alsdkfjalksdjfklasjfdlkasdjflaksdfjaklsdfj
+        aksldfjlasdjflkasdjflasdkfjasldkfjalsdkfjdlskjasdlkfjalksdjfalksdfjjlksadfjadlksfasldkfj</div>
+  </div>
+</div> -->

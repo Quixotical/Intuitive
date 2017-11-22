@@ -1,0 +1,18 @@
+<h2>Create New Product Area</h2>
+<form data-bind="event: {submit: onSubmit}">
+  <div class="form-group">
+    <label for="name">Product Area</label>
+    <input data-bind="value: name" type="text" class="form-control" id="name" placeholder="Enter new product area">
+  </div>
+
+  <div class="form-group">
+    <label for="description">Description</label>
+    <textarea data-bind="value: description" rows="3" type="text" class="form-control"
+      id="description" placeholder="Enter description">
+    </textarea>
+  </div>
+
+  <div class="text-center">
+    <button type="submit" class="btn btn-primary">Submit</button>
+  </div>
+</form>

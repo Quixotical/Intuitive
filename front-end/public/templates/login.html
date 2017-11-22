@@ -2,5 +2,14 @@
     <h2>You are not logged in</h2>
 
     <div class="g-signin2" data-onsuccess="onSignIn" data-theme="dark"></div>
-    <p><a href="{{ url_for('show_register')}}">Register</a></p>
+
+    <form data-bind="event: {submit: onSubmit}">
+      <label> Email </label>
+      <input data-bind="value: email" type="email" name="email" placeholder="Enter email">
+      <label> Password </label>
+      <input data-bind="value: password" type="password" name="password" placeholder="Enter password">
+      <input type="submit" value="submit">
+    </form>
+
+    <p><a data-bind="click: onRegisterClick" href="#">Register</a></p>
   </div>

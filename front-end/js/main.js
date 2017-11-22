@@ -2,32 +2,23 @@ import '../css/style.css';
 
 import registerPage from './register.page'
 import loginPage from './login.page'
+import featurePage from './feature.page'
+import clientPage from './client.page'
+import productAreaPage from './product_area.page'
+import homePage from './home.page'
 
 const verifyUser = (ctx, next) => {
-  let token = window.sessionStorage.token
+  const token = window.localStorage.token
+  const headers = { 'Authorization': `Bearer ${token}` }
+  const PORT = 7777
 
-  let authPromise = new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", "http://localhost:7777/auth/verify", true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-    xhr.onload = () => {
-      if(xhr.status > 299){
-        resolve(false);
-      }
-      resolve(true);
-    };
-    xhr.onerror = () => {console.log('lock out');reject(xhr.statusText);}
-    xhr.send();
-  });
-
-  authPromise
-    .then((authorized) => {
-      ctx.authorized = authorized;
+  fetch(`${'http://'}${location.host}:${PORT}` + '/auth/verify', { headers })
+    .then(r => r.json())
+    .then((result) => {
+      ctx.authorized = result.authorized;
       next();
     })
     .catch((error) => {
-      console.error('error verifying user', error)
       ctx.authorized = false;
       next();
     });
@@ -45,8 +36,12 @@ const fetchPage = (templateName, callback) => {
   })
 }
 
-let renderContent = (templateName, callback) => {
+let renderContent = (templateName, callback, ctx, next) => {
+  if(ctx.authorized){
+    page('/');
+  }else{
     fetchPage(templateName, callback);
+  }
 }
 
 let renderAuthContent = (templateName, callback, ctx, next) => {
@@ -57,25 +52,19 @@ let renderAuthContent = (templateName, callback, ctx, next) => {
   }
 }
 
-page('home', function(){
-  renderContent('home', null, credentials)
-});
+page('/index', verifyUser, renderAuthContent.bind(null,'home', homePage));
 
-page('/index', verifyUser, renderAuthContent.bind(window,'feature', null));
+page('/', verifyUser, renderAuthContent.bind(window,'home', homePage));
 
-page('/', verifyUser, renderAuthContent.bind(window,'feature', null));
+page('/feature', verifyUser, renderAuthContent.bind(window,'feature', featurePage));
+page('/feature/:id', verifyUser, renderAuthContent.bind(window, 'feature', featurePage));
 
-page('/feature', function(){
-  renderContent('feature')
-});
+page('/client', verifyUser, renderAuthContent.bind(window, 'client', clientPage));
 
-page('/register', function(){
-  renderContent('register', registerPage)
-});
+page('/product_area', verifyUser, renderAuthContent.bind(window, 'product_area', productAreaPage))
+page('/register', renderContent.bind(window, 'register', registerPage));
 
-page('/login', function(){
-  renderContent('login', loginPage)
-});
+page('/login', verifyUser, renderContent.bind(window, 'login', loginPage));
 
 page('*', function(){
   page('/login')
@@ -96,9 +85,8 @@ window.onSignIn = function(googleUser) {
     if(xml.readyState == XMLHttpRequest.DONE){
       if (xml.status === 200) {
         var response = JSON.parse(xml.responseText);
-        window.sessionStorage.setItem('token', response.token);
-        console.log(response);
-        console.log('woooo');
+        window.localStorage.setItem('token', response.token);
+        page('/');
       }else{
         console.warn('oopsie daisie');
       }

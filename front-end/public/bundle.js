@@ -6,6 +6,7 @@ var api = axios.create({
 });
 
 var registerPage = (container) => {
+
   var viewModel = {
     fullname: ko.observable(),
     email: ko.observable(),
@@ -17,14 +18,13 @@ var registerPage = (container) => {
         password: formFields.password(),
       })
         .then((resp)=> {
-          window.sessionStorage.setItem('token', resp.data.auth_token);
+          window.localStorage.setItem('token', resp.data.token);
+          page('/');
         })
         .catch(({ response }) => {
           //TODO display error messages
           console.warn('Error registering user', response.data.message);
         });
-
-      console.warn('ayy');
     }
   };
   ko.applyBindings(viewModel, container);
@@ -38,36 +38,216 @@ var loginPage = (container) => {
       script.src = "https://apis.google.com/js/platform.js";
 
       document.head.appendChild(script);
+    },
+
+    email: ko.observable(),
+    password: ko.observable(),
+
+    onRegisterClick(e){
+      page('/register');
+    },
+
+    onSubmit (formFields) {
+
+      api.post('/login', {
+        email: formFields.email(),
+        password: formFields.password(),
+      })
+        .then((resp)=> {
+          window.localStorage.setItem('token', resp.data.token);
+          page('/');
+        })
+        .catch(({ response }) => {
+          //TODO display error messages
+          console.warn('Error registering user', response.data.message);
+        });
     }
   };
+  ko.applyBindings(viewModel, container);
   viewModel.dynamicallyLoadScript();
 };
 
+var featurePage = (container) => {
+  var viewModel = {
+    targetDate:ko.observable(moment().format('YYYY-MM-DD')),
+    title: ko.observable(),
+    priority: ko.observable(),
+    clients: ko.observableArray([
+      {id: 1, clientName: "Client A"},
+      {id: 2, clientName: "Client B"},
+      {id: 3, clientName: "Client C"}
+    ]),
+    productAreas: ko.observableArray([
+      {id: 1, productArea:"Policies"},
+      {id: 2, productArea:"Billing"},
+      {id: 3, productArea:"Claims"},
+      {id: 4, productArea:"Reports"},
+    ]),
+    description: ko.observable(),
+    selectedClient: ko.observable(),
+    selectedProductArea: ko.observable(),
+
+    getFormattedDate (){
+      return moment(this.targetDate()).format('MM/DD/YYYY');
+    },
+
+    onSubmit (formFields) {
+      console.log(formFields.targetDate());
+
+      let data = {
+        title: formFields.title(),
+        description: formFields.description(),
+        priority: formFields.priority(),
+        target_date: formFields.targetDate(),
+        client_id: formFields.selectedClient(),
+        product_area_id: formFields.selectedProductArea(),
+      };
+
+      api({
+        method: 'POST',
+        url: '/feature',
+        data: data,
+        headers: {
+          Authorization: 'Bearer '+ window.localStorage.token
+        }
+      })
+        .then((resp)=> {
+          console.log(resp);
+          // page('/');
+        })
+        .catch(({ response }) => {
+          //TODO display error messages
+          console.warn('Error registering user', response.data.message);
+        });
+    }
+  };
+
+  var retrieve = function() {
+    api.get('/feature-priorities', {headers:{Authorization: 'Bearer '+ window.localStorage.token}})
+      .then((resp)=> {
+        console.log(resp);
+        // let features = resp.data.features;
+        // for (let feature of features) {
+        //   feature.target_date = moment(feature.target_date).format('MM/DD/YYYY')
+        // }
+        // viewModel.features(resp.data.features);
+        // viewModel.userFeatures(resp.data.user_features);
+
+      })
+      .catch(({ response }) => {
+        console.log(response);
+        console.warn('Error adding client', response.data.message);
+      });
+  };
+  retrieve();
+  ko.applyBindings(viewModel, container);
+};
+
+var clientPage = (container) => {
+
+  var viewModel = {
+    name: ko.observable(),
+
+    onSubmit (formFields) {
+
+      let data = {
+        name: formFields.name()
+      };
+
+      api({
+        method: 'POST',
+        url: '/client',
+        data: data,
+        headers: {
+          Authorization: 'Bearer '+ window.localStorage.token
+        }
+      })
+        .then((resp)=> {
+          console.log('woooo');
+          page('/');
+        })
+        .catch(({ response }) => {
+          //TODO display error messages
+          console.warn('Error adding client', response.data.message);
+        });
+    }
+  };
+  ko.applyBindings(viewModel, container);
+};
+
+var productAreaPage = (container) => {
+
+  var viewModel = {
+    name: ko.observable(),
+    description: ko.observable(),
+
+    onSubmit (formFields) {
+
+      let data = {
+        name: formFields.name(),
+        description: formFields.description(),
+      };
+
+      api({
+        method: 'POST',
+        url: '/product_area',
+        data: data,
+        headers: {
+          Authorization: 'Bearer '+ window.localStorage.token
+        }
+      })
+        .then((resp)=> {
+          page('/');
+        })
+        .catch(({ response }) => {
+          //TODO display error messages
+          console.warn('Error adding client', response.data.message);
+        });
+    }
+  };
+  ko.applyBindings(viewModel, container);
+};
+
+var homePage = (container) => {
+  var viewModel = {
+    features: ko.observableArray(),
+    userFeatures: ko.observableArray(),
+    loading: ko.observable('Loading')
+  };
+
+  var retrieve = function() {
+    api.get('/', {headers:{Authorization: 'Bearer '+ window.localStorage.token}})
+      .then((resp)=> {
+        console.log(resp);
+        let features = resp.data.features;
+        for (let feature of features) {
+          feature.target_date = moment(feature.target_date).format('MM/DD/YYYY');
+        }
+        viewModel.features(resp.data.features);
+        viewModel.userFeatures(resp.data.user_features);
+
+      })
+      .catch(({ response }) => {
+        console.log(response);
+        console.warn('Error adding client', response.data.message);
+      });
+  };
+  retrieve();
+  ko.applyBindings(viewModel, container);
+};
+
 const verifyUser = (ctx, next) => {
-  let token = window.sessionStorage.token;
+  const token = window.localStorage.token;
+  const headers = { 'Authorization': `Bearer ${token}` };
+  const PORT = 7777;
 
-  let authPromise = new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("GET", "http://localhost:7777/auth/verify", true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-    xhr.onload = () => {
-      if(xhr.status > 299){
-        resolve(false);
-      }
-      resolve(true);
-    };
-    xhr.onerror = () => {console.log('lock out');reject(xhr.statusText);};
-    xhr.send();
-  });
-
-  authPromise
-    .then((authorized) => {
-      ctx.authorized = authorized;
+  fetch(`${'http://'}${location.host}:${PORT}` + '/auth/verify', { headers })
+    .then(r => r.json())
+    .then((result) => {
+      ctx.authorized = result.authorized;
       next();
     })
     .catch((error) => {
-      console.error('error verifying user', error);
       ctx.authorized = false;
       next();
     });
@@ -85,8 +265,12 @@ const fetchPage = (templateName, callback) => {
   });
 };
 
-let renderContent = (templateName, callback) => {
+let renderContent = (templateName, callback, ctx, next) => {
+  if(ctx.authorized){
+    page('/');
+  }else{
     fetchPage(templateName, callback);
+  }
 };
 
 let renderAuthContent = (templateName, callback, ctx, next) => {
@@ -97,25 +281,19 @@ let renderAuthContent = (templateName, callback, ctx, next) => {
   }
 };
 
-page('home', function(){
-  renderContent('home', null, credentials);
-});
+page('/index', verifyUser, renderAuthContent.bind(null,'home', homePage));
 
-page('/index', verifyUser, renderAuthContent.bind(window,'feature', null));
+page('/', verifyUser, renderAuthContent.bind(window,'home', homePage));
 
-page('/', verifyUser, renderAuthContent.bind(window,'feature', null));
+page('/feature', verifyUser, renderAuthContent.bind(window,'feature', featurePage));
+page('/feature/:id', verifyUser, renderAuthContent.bind(window, 'feature', featurePage));
 
-page('/feature', function(){
-  renderContent('feature');
-});
+page('/client', verifyUser, renderAuthContent.bind(window, 'client', clientPage));
 
-page('/register', function(){
-  renderContent('register', registerPage);
-});
+page('/product_area', verifyUser, renderAuthContent.bind(window, 'product_area', productAreaPage));
+page('/register', renderContent.bind(window, 'register', registerPage));
 
-page('/login', function(){
-  renderContent('login', loginPage);
-});
+page('/login', verifyUser, renderContent.bind(window, 'login', loginPage));
 
 page('*', function(){
   page('/login');
@@ -136,9 +314,8 @@ window.onSignIn = function(googleUser) {
     if(xml.readyState == XMLHttpRequest.DONE){
       if (xml.status === 200) {
         var response = JSON.parse(xml.responseText);
-        window.sessionStorage.setItem('token', response.token);
-        console.log(response);
-        console.log('woooo');
+        window.localStorage.setItem('token', response.token);
+        page('/');
       }else{
         console.warn('oopsie daisie');
       }

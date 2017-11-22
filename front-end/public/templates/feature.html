@@ -1,42 +1,48 @@
-  <h2 class="text-center">Create new feature</h2>
-  <form>
+  <h2 class="text-center">Submit a new Feature</h2>
+  <form data-bind="event: {submit: onSubmit}">
     <div class="form-group">
       <label for="title">Feature Title</label>
-      <input type="text" class="form-control" id="title" placeholder="Enter feature title">
+      <input data-bind="value: title" type="text" class="form-control" id="title" placeholder="Enter feature title">
     </div>
     <div class="form-group">
       <div class="row">
         <div class="col">
           <label for="client">Client</label>
-          <select class="form-control">
-            <option>Client A</option>
-            <option>Client B</option>
-            <option>Client C</option>
+          <select data-bind="
+          value: selectedClient,
+          options: clients,
+          optionsText: 'clientName',
+          optionsValue: 'id',
+          optionsCaption: '-- Select Clients --'
+          " class="form-control" id='clients' name='clients'>
           </select>
         </div>
 
         <div class="col">
           <label for="product-area">Product Area</label>
-          <select class="form-control" id="product-area">
-            <option>Policies</option>
-            <option>Billing</option>
-            <option>Claims</option>
-            <option>Reports</option>
+          <select data-bind="
+          value: selectedProductArea,
+          options: productAreas,
+          optionsText: 'productArea',
+          optionsValue: 'id',
+          optionsCaption: '-- Select Product Area --'
+          " class="form-control" id="product-area" name='product-area'>
           </select>
         </div>
       </div>
     </div>
     <div class="form-group">
       <label for="priority">Client Priority</label>
-      <input type="text" id="priority" class="form-control" placeholder="Choose priority">
+      <input data-bind="value: priority" type="text" id="priority" class="form-control" placeholder="Choose priority">
     </div>
     <div class="form-group">
       <label for="target-date">Target Date</label>
-      <input type="date" id="target-date" class="form-control">
+      <input data-bind="value: targetDate" type="date" name="date" id="target-date" class="form-control">
     </div>
     <div class="form-group">
       <label for="description">Description</label>
-      <textarea class="form-control" rows="3"></textarea>
+      <textarea data-bind="value: description" placeholder="Enter description" class="form-control" rows="3">
+      </textarea>
     </div>
     <div class="text-center">
       <button type="submit" class="btn btn-primary">Submit</button>

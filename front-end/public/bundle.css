@@ -1,6 +1,90 @@
-.container {
+#container {
   max-width: 760px;
+  margin: 0 10%;
+  text-align:center;
 }
+@media screen and (min-width:927px){
+  #container {
+    margin: 0 auto;
+  }
+}
+.title-container {
+  margin-top:40px;
+  text-align:center;
+  font-size:40px;
+}
+.title-container h1 {
+  color: deepskyblue;
+  font-size: 9.4675vw;
+}
+.title-container h3 {
+  font-size: 6.40vw;
+}
+@media screen and (min-width:500px){
+  .title-container h3 {
+    font-size: 32px;
+  }
+}
+
+@media screen and (min-width:845px){
+  .title-container h1 {
+    font-size:80px;
+  }
+}
+
 body {
-  background-color:blue;
+  background-color:#eff7ff;
 }
+/*
+HOME PAGE
+*/
+.feature {
+  margin-bottom: 10px;
+  border: 2px solid lightgray;
+  padding: 10px;
+}
+.row.title .username{
+  font-size:32px;
+  margin:auto;
+}
+
+.row.title .feature-title{
+  font-size:60px;
+  margin:auto;
+}
+
+.row.title .priority {
+  font-size:28px;
+  margin:auto;
+}
+
+.row.details .client {
+  font-size: 40px;
+  margin:auto;
+}
+
+.row.details .product {
+  font-size:40px;
+  margin:auto;
+}
+
+.row.details .target-date {
+  font-size:40px;
+  margin:auto;
+}
+
+.row.description .description{
+  font-size: 28px;
+  margin:auto;
+}
+
+.row.feature-buttons div{
+  margin-top: 10px;
+}
+.row.feature-buttons div button {
+  width:139px;
+}
+
+/*
+FEATURE PAGE
+*/
