@@ -2,30 +2,52 @@ import api from './api';
 
 export default (container) => {
   var viewModel = {
+    clientsFeatures: ko.observableArray(),
     targetDate:ko.observable(moment().format('YYYY-MM-DD')),
     title: ko.observable(),
     priority: ko.observable(),
-    clients: ko.observableArray([
-      {id: 1, clientName: "Client A"},
-      {id: 2, clientName: "Client B"},
-      {id: 3, clientName: "Client C"}
-    ]),
-    productAreas: ko.observableArray([
-      {id: 1, productArea:"Policies"},
-      {id: 2, productArea:"Billing"},
-      {id: 3, productArea:"Claims"},
-      {id: 4, productArea:"Reports"},
-    ]),
+    clients: ko.observableArray(),
+    productAreas: ko.observableArray(),
     description: ko.observable(),
     selectedClient: ko.observable(),
     selectedProductArea: ko.observable(),
+    clientPriorities: ko.observableArray(null),
 
+    testingClick () {
+
+      $( ".box-container" ).on( "sortstop", function( event, ui ) {console.log('weeee')} );
+    },
     getFormattedDate (){
       return moment(this.targetDate()).format('MM/DD/YYYY');
     },
 
+    checkPriority(knockoutFields, e) {
+      let client = knockoutFields.clients().find((client) => {
+        return client.id === +e.target.value
+      })
+      let features;
+      if (client){
+        for(let key in knockoutFields.clientsFeatures()){
+          key === client.name ? viewModel.clientPriorities(knockoutFields.clientsFeatures()[key]) : null
+        }
+      }else {
+        viewModel.clientPriorities(null);
+      }
+
+      $(".box-container").sortable({
+        revert: true,
+        scroll: true,
+        placeholder: "sortable-placeholder",
+        stop: function(event,ui){
+          console.log(ui);
+        },
+        change: function( event, ui ) {console.log('hey hey', event, ui)},
+        update: function( event, ui ) {console.log('meep')},
+
+      });
+    },
+
     onSubmit (formFields) {
-      console.log(formFields.targetDate());
 
       let data = {
         title: formFields.title(),
@@ -54,18 +76,13 @@ export default (container) => {
         });
     }
   }
-
   var retrieve = function() {
     api.get('/feature-priorities', {headers:{Authorization: 'Bearer '+ window.localStorage.token}})
       .then((resp)=> {
         console.log(resp);
-        // let features = resp.data.features;
-        // for (let feature of features) {
-        //   feature.target_date = moment(feature.target_date).format('MM/DD/YYYY')
-        // }
-        // viewModel.features(resp.data.features);
-        // viewModel.userFeatures(resp.data.user_features);
-
+        viewModel.clientsFeatures(resp.data.clients_features)
+        viewModel.clients(resp.data.clients);
+        viewModel.productAreas(resp.data.product_areas);
       })
       .catch(({ response }) => {
         console.log(response)
@@ -73,5 +90,9 @@ export default (container) => {
       });
   }
   retrieve();
+
+
+
+
   ko.applyBindings(viewModel, container);
 }
