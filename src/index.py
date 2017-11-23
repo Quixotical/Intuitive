@@ -13,7 +13,6 @@ from passlib.apps import custom_app_context as pwd_context
 from model_helpers import make_jsonifiable, update_model, format_features
 from field_validators import password_length, fullname_length, validate_email
 
-
 app = Flask(__name__, static_folder='static', static_url_path='')
 cors = CORS(app, resources={r"*": {"origins": "*"}})
 jwt = JWT(config.SECRET_KEY, expires_in=360000)
@@ -276,11 +275,23 @@ class FeatureRequestAPI(Resource):
         self.reqparse.add_argument('priority', type=str,
                                     required=True,
                                     help='Must select client priority')
+        self.reqparse.add_argument('submitted_feature_list', type=str,
+                                    required=False,
+                                    help='List of features not property formatted')
         super(FeatureRequestAPI, self).__init__()
 
     @auth.login_required
     def post(self):
         args = self.reqparse.parse_args()
+
+        features_to_reorder = json.loads(args['submitted_feature_list'])
+
+        for reorder_feature in features_to_reorder:
+            feature_id = reorder_feature['id']
+            updated_feature = FeatureRequest.query.filter_by(id=feature_id).first()
+            updated_feature.priority = reorder_feature['priority']
+            db.session.add(updated_feature)
+            db.session.commit()
 
         try:
             feature = FeatureRequest(
@@ -303,7 +314,11 @@ class RetrieveFeatures(Resource):
     def get(self):
         try:
             features = FeatureRequest.query.all()
-            user_features = FeatureRequest.query.join(User).filter(FeatureRequest.user_id == g.user.id).all()
+            user_features = FeatureRequest.query.join(User).filter(
+            FeatureRequest.user_id == g.user.id
+            ).order_by(
+            FeatureRequest.priority
+            ).all()
 
 
             formatted_features = format_features(FeatureRequest, features)
@@ -374,7 +389,7 @@ class RetrieveFeatureInfo(Resource):
         client_list = {}
 
         for client in clients:
-            client_features = client.client_features.all()
+            client_features = client.client_features.order_by(FeatureRequest.priority).all()
 
             for feature in client_features:
                 feature.target_date = str(feature.target_date)
