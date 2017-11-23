@@ -1,5 +1,7 @@
-
-<h1 class="page-title">Requested Features</h1>
+<div class="home-title-container">
+<h1 class="page-title home">Requested Features</h1>
+<button class="btn btn-success add-feature-btn" data-bind="click: onAddFeature">Add Feature</button>
+</div>
 <div class="features" data-bind="foreach: features">
   <div class="feature">
     <div class="row title">
@@ -16,9 +18,9 @@
         <div class="col-md-12 description" data-bind="text: description"></div>
     </div>
     <div class="row feature-buttons">
-      <div class="col-md-4"><button class="btn btn-primary">Edit Feature</button></div>
+      <div class="col-md-4"><button class="btn btn-primary" data-bind="click: $parent.onEditFeature">Edit Feature</button></div>
       <div class="col-md-4"></div>
-      <div class="col-md-4"><button class="btn btn-danger">Delete Feature</button></div>
+      <div class="col-md-4"><button class="btn btn-danger" data-bind="click:$parent.onDeleteFeature">Delete Feature</button></div>
     </div>
   </div>
 </div>
