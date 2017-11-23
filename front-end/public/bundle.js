@@ -68,39 +68,89 @@ var loginPage = (container) => {
 };
 
 var featurePage = (container) => {
+
   var viewModel = {
+    submittedFeatureList: ko.observableArray(),
+    clientsFeatures: ko.observableArray(),
+    currentClient: ko.observable(),
     targetDate:ko.observable(moment().format('YYYY-MM-DD')),
-    title: ko.observable(),
-    priority: ko.observable(),
-    clients: ko.observableArray([
-      {id: 1, clientName: "Client A"},
-      {id: 2, clientName: "Client B"},
-      {id: 3, clientName: "Client C"}
-    ]),
-    productAreas: ko.observableArray([
-      {id: 1, productArea:"Policies"},
-      {id: 2, productArea:"Billing"},
-      {id: 3, productArea:"Claims"},
-      {id: 4, productArea:"Reports"},
-    ]),
+    featureTitle: ko.observable(),
+    priority: ko.observable(1),
+    clients: ko.observableArray(),
+    productAreas: ko.observableArray(),
     description: ko.observable(),
     selectedClient: ko.observable(),
     selectedProductArea: ko.observable(),
+    clientPriorities: ko.observableArray(null),
+    newFeature:ko.observableArray([{id:0, title:'New Title'}]),
 
     getFormattedDate (){
       return moment(this.targetDate()).format('MM/DD/YYYY');
     },
 
+    checkPriority(knockoutFields, e) {
+      let client = knockoutFields.clients().find((client) => {
+        return client.id === +e.target.value
+      });
+      if (client){
+        viewModel.clientPriorities([]);
+        console.log(knockoutFields.newFeature());
+        for(let key in knockoutFields.clientsFeatures()){
+          key === client.name ? viewModel.clientPriorities(knockoutFields.clientsFeatures()[key]) : null;
+          key === client.name ? viewModel.currentClient(key): null;
+        }
+
+        for(let [idx, feature] of viewModel.clientPriorities().entries()){
+          feature.priority = idx + 2;
+        }
+
+        viewModel.submittedFeatureList(viewModel.clientPriorities());
+        viewModel.newFeature([{id:0, title: ''}]);
+      }else {
+        viewModel.clientPriorities(null);
+      }
+
+
+      $(".box-container").sortable({
+        revert: true,
+        scroll: true,
+        placeholder: "sortable-placeholder",
+        stop: function(event,ui){
+          let updatedFeatureList = [];
+          let priorityBoxes = ui.item[0].parentNode.querySelectorAll('.priority-box');
+          for(let [idx, boxObject] of priorityBoxes.entries()){
+            let found = false;
+            for(let feature of viewModel.clientPriorities()){
+
+              if (feature.id === +boxObject.dataset.feature_id){
+                found = true;
+                feature.priority = idx + 1;
+                updatedFeatureList.push(feature);
+              }
+            }
+            if(found === false){
+              viewModel.priority(idx + 1);
+            }
+          }
+
+          viewModel.submittedFeatureList(updatedFeatureList);
+        },
+        change: function( event, ui ) {},
+        update: function( event, ui ) {},
+
+      });
+    },
+
     onSubmit (formFields) {
-      console.log(formFields.targetDate());
 
       let data = {
-        title: formFields.title(),
+        title: formFields.featureTitle(),
         description: formFields.description(),
         priority: formFields.priority(),
         target_date: formFields.targetDate(),
         client_id: formFields.selectedClient(),
         product_area_id: formFields.selectedProductArea(),
+        submitted_feature_list: JSON.stringify(formFields.submittedFeatureList()),
       };
 
       api({
@@ -113,7 +163,7 @@ var featurePage = (container) => {
       })
         .then((resp)=> {
           console.log(resp);
-          // page('/');
+          page('/');
         })
         .catch(({ response }) => {
           //TODO display error messages
@@ -121,18 +171,13 @@ var featurePage = (container) => {
         });
     }
   };
-
   var retrieve = function() {
     api.get('/feature-priorities', {headers:{Authorization: 'Bearer '+ window.localStorage.token}})
       .then((resp)=> {
         console.log(resp);
-        // let features = resp.data.features;
-        // for (let feature of features) {
-        //   feature.target_date = moment(feature.target_date).format('MM/DD/YYYY')
-        // }
-        // viewModel.features(resp.data.features);
-        // viewModel.userFeatures(resp.data.user_features);
-
+        viewModel.clientsFeatures(resp.data.clients_features);
+        viewModel.clients(resp.data.clients);
+        viewModel.productAreas(resp.data.product_areas);
       })
       .catch(({ response }) => {
         console.log(response);

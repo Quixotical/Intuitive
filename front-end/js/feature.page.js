@@ -1,22 +1,22 @@
 import api from './api';
 
 export default (container) => {
+
   var viewModel = {
+    submittedFeatureList: ko.observableArray(),
     clientsFeatures: ko.observableArray(),
+    currentClient: ko.observable(),
     targetDate:ko.observable(moment().format('YYYY-MM-DD')),
-    title: ko.observable(),
-    priority: ko.observable(),
+    featureTitle: ko.observable(),
+    priority: ko.observable(1),
     clients: ko.observableArray(),
     productAreas: ko.observableArray(),
     description: ko.observable(),
     selectedClient: ko.observable(),
     selectedProductArea: ko.observable(),
     clientPriorities: ko.observableArray(null),
+    newFeature:ko.observableArray([{id:0, title:'New Title'}]),
 
-    testingClick () {
-
-      $( ".box-container" ).on( "sortstop", function( event, ui ) {console.log('weeee')} );
-    },
     getFormattedDate (){
       return moment(this.targetDate()).format('MM/DD/YYYY');
     },
@@ -27,22 +27,50 @@ export default (container) => {
       })
       let features;
       if (client){
+        viewModel.clientPriorities([]);
+        console.log(knockoutFields.newFeature());
         for(let key in knockoutFields.clientsFeatures()){
           key === client.name ? viewModel.clientPriorities(knockoutFields.clientsFeatures()[key]) : null
+          key === client.name ? viewModel.currentClient(key): null
         }
+
+        for(let [idx, feature] of viewModel.clientPriorities().entries()){
+          feature.priority = idx + 2
+        }
+
+        viewModel.submittedFeatureList(viewModel.clientPriorities());
+        viewModel.newFeature([{id:0, title: ''}]);
       }else {
         viewModel.clientPriorities(null);
       }
+
 
       $(".box-container").sortable({
         revert: true,
         scroll: true,
         placeholder: "sortable-placeholder",
         stop: function(event,ui){
-          console.log(ui);
+          let updatedFeatureList = []
+          let priorityBoxes = ui.item[0].parentNode.querySelectorAll('.priority-box');
+          for(let [idx, boxObject] of priorityBoxes.entries()){
+            let found = false;
+            for(let feature of viewModel.clientPriorities()){
+
+              if (feature.id === +boxObject.dataset.feature_id){
+                found = true;
+                feature.priority = idx + 1
+                updatedFeatureList.push(feature)
+              }
+            }
+            if(found === false){
+              viewModel.priority(idx + 1)
+            }
+          }
+
+          viewModel.submittedFeatureList(updatedFeatureList);
         },
-        change: function( event, ui ) {console.log('hey hey', event, ui)},
-        update: function( event, ui ) {console.log('meep')},
+        change: function( event, ui ) {},
+        update: function( event, ui ) {},
 
       });
     },
@@ -50,12 +78,13 @@ export default (container) => {
     onSubmit (formFields) {
 
       let data = {
-        title: formFields.title(),
+        title: formFields.featureTitle(),
         description: formFields.description(),
         priority: formFields.priority(),
         target_date: formFields.targetDate(),
         client_id: formFields.selectedClient(),
         product_area_id: formFields.selectedProductArea(),
+        submitted_feature_list: JSON.stringify(formFields.submittedFeatureList()),
       }
 
       api({
@@ -68,7 +97,7 @@ export default (container) => {
       })
         .then((resp)=> {
           console.log(resp);
-          // page('/');
+          page('/');
         })
         .catch(({ response }) => {
           //TODO display error messages
@@ -90,9 +119,5 @@ export default (container) => {
       });
   }
   retrieve();
-
-
-
-
   ko.applyBindings(viewModel, container);
 }

@@ -32,6 +32,12 @@
   }
 }
 
+.page-title {
+  color: #fd7878;
+  font-size: 50px;
+  margin: 20px 0 40px 0;
+}
+
 body {
   background-color:#eff7ff;
 }
@@ -99,6 +105,7 @@ FEATURE PAGE
 }
 
 .priority-box {
+  min-width:330px;
   padding: 20px;
   font-size: 30px;
   width: 60%;
@@ -116,8 +123,8 @@ FEATURE PAGE
   height: 100px;
   margin:5px;
 }
-/*.shrink {transition: transform .2s ease-in-out;}*/
-/*.shrink:hover {transform: scale(.9); cursor:move}*/
+.shrink {transition: transform .2s ease-in-out;}
+.shrink:hover {transform: scale(.9); cursor:move}
 
 .shrink.ui-sortable-helper {
   transform: scale(1.1);

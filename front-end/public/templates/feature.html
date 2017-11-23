@@ -2,10 +2,22 @@
   <form data-bind="event: {submit: onSubmit}">
     <div class="form-group">
       <label for="title">Feature Title</label>
-      <input data-bind="value: title" type="text" class="form-control" id="title" placeholder="Enter feature title">
+      <input data-bind="value: featureTitle" type="text" class="form-control" id="title" placeholder="Enter feature title">
     </div>
     <div class="form-group">
       <div class="row">
+        <div class="col">
+          <label for="product-area">Product Area</label>
+          <select data-bind="
+          value: selectedProductArea,
+          options: productAreas,
+          optionsText: 'name',
+          optionsValue: 'id',
+          optionsCaption: '-- Select Product Area --'
+          " class="form-control" id="product-area" name='product-area'>
+          </select>
+        </div>
+
         <div class="col">
           <label for="client">Client</label>
           <select data-bind="
@@ -18,43 +30,25 @@
           " class="form-control" id='clients' name='clients'>
           </select>
         </div>
-
-        <div class="col">
-          <label for="product-area">Product Area</label>
-          <select data-bind="
-          value: selectedProductArea,
-          options: productAreas,
-          optionsText: 'name',
-          optionsValue: 'id',
-          optionsCaption: '-- Select Product Area --'
-          " class="form-control" id="product-area" name='product-area'>
-          </select>
-        </div>
       </div>
     </div>
-    <!-- <div class="form-group">
-      <label for="priority">Client Priority</label>
-      <input data-bind="value: priority" type="text" id="priority" class="form-control" placeholder="Choose priority">
-    </div> -->
 
     <div class="form-group" data-bind="
     if: clientPriorities() !== null
     ">
       <label for="priority" class="feature-priority-label">Client Priority</label>
-      <div class="box-container" id="sortable">
-        <!-- ko if: clientPriorities().length == 0 -->
-          <div class="priority-box-new">1</div>
-        <!-- /ko -->
+      <p class="text-muted"> Rearrange list to assign feature priorities</p>
+      <div class="box-container" id="sortable" data-bind="attr: {'data-feature_client': currentClient}">
 
-        <!-- ko foreach: clientPriorities -->
-        <div class="priority-box shrink" data-bind="
-        attr: { 'data-priority': id }
-        "><p data-bind="text: title"></p></div>
+        <!-- ko foreach: newFeature -->
+          <div class="priority-box new shrink" data-bind="text: $parent.featureTitle"></div>
         <!-- /ko -->
-        <!-- ko ifnot: clientPriorities().length == 0 -->
-        <div class="priority-box new shrink">
-          <p> New Feature</p>
-        </div>
+        <!-- ko foreach: clientPriorities -->
+          <div class="priority-box shrink" data-bind="
+          attr: {
+            'data-feature_id': id
+           }
+          "><p data-bind="text: title"></p></div>
         <!-- /ko -->
       </div>
     </div>
@@ -71,4 +65,3 @@
       <button type="submit" class="btn btn-primary">Submit</button>
     </div>
   </form>
-  <button data-bind="event: {click: testingClick}">test</button>
