@@ -281,6 +281,37 @@ class FeatureRequestAPI(Resource):
         super(FeatureRequestAPI, self).__init__()
 
     @auth.login_required
+    def get(self, feature_id):
+
+        clients = Client.query.all()
+        formatted_clients = make_jsonifiable(Client, clients)
+
+        product_areas = ProductArea.query.all()
+        formatted_product_areas = make_jsonifiable(ProductArea, product_areas)
+
+        client_list = {}
+
+        for client in clients:
+            client_features = client.client_features.order_by(
+            FeatureRequest.priority
+            ).filter(
+            FeatureRequest.id != feature_id
+            ).all()
+            for feature in client_features:
+                feature.target_date = str(feature.target_date)
+
+            formatted_client_list = make_jsonifiable(FeatureRequest, client_features)
+            client_list[client.name]= formatted_client_list
+
+        feature = FeatureRequest.query.filter_by(id=feature_id).first()
+        if feature is not None:
+            feature.target_date = str(feature.target_date)
+            formatted_feature = make_jsonifiable(FeatureRequest, feature)
+
+            return {'clients_features':client_list, 'clients': formatted_clients,
+                    'product_areas': formatted_product_areas, 'feature': formatted_feature}
+
+    @auth.login_required
     def post(self):
         args = self.reqparse.parse_args()
 
@@ -308,6 +339,19 @@ class FeatureRequestAPI(Resource):
             return {'message': 'created'}
         except Exception:
             return {'error': 'Error saving Feature'}, 400
+
+    @auth.login_required
+    def delete(self, feature_id):
+        feature = FeatureRequest.query.filter_by(id=feature_id).first()
+        if feature is None:
+            return {'error':'Feature does not exist'}
+
+        try:
+            FeatureRequest.query.filter_by(id=feature_id).delete()
+            db.session.commit()
+            return {'success': 'Feature deleted'}
+        except Exception:
+            return {'error': 'Unable to delete feature at this time'}
 
 class RetrieveFeatures(Resource):
     @auth.login_required
@@ -409,6 +453,7 @@ api.add_resource(GoogleLogin, '/login/google', endpoint='google_login')
 api.add_resource(RetrieveFeatures, '/', endpoint='home')
 api.add_resource(RetrieveFeatureInfo, '/feature-priorities', endpoint='feature_priority')
 api.add_resource(FeatureRequestAPI, '/feature', endpoint='feature')
+api.add_resource(FeatureRequestAPI, '/feature/<feature_id>')
 api.add_resource(ClientAPI, '/client', endpoint='client')
 api.add_resource(ProductAreaAPI, '/product_area', endpoint='product_area')
 
