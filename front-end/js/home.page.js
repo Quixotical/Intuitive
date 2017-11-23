@@ -4,7 +4,16 @@ export default (container) => {
   var viewModel = {
     features: ko.observableArray(),
     userFeatures: ko.observableArray(),
-    loading: ko.observable('Loading')
+    loading: ko.observable('Loading'),
+    onAddFeature(e){
+      page('/feature');
+    },
+    onEditFeature(e){
+      page('/feature');
+    },
+    onDeleteFeature(e){
+      page('/feature');
+    },
   };
 
   var retrieve = function() {
