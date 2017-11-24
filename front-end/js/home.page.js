@@ -1,4 +1,5 @@
 import api from './api';
+import makeToast from './toast_maker';
 
 export default (container) => {
   var viewModel = {
@@ -8,18 +9,40 @@ export default (container) => {
     onAddFeature(e){
       page('/feature');
     },
-    onEditFeature(e){
-      page('/feature');
+    onEditFeature(item, e){
+      e.preventDefault();
+      page('/feature/'+ item.id);
     },
-    onDeleteFeature(e){
-      page('/feature');
+    onDeleteFeature(item, e){
+      e.preventDefault();
+      let originalFeatureList = viewModel.features();
+
+      let updatedFeatureList = viewModel.features().filter((feature) => {
+        return feature.id !== +item.id
+      })
+      viewModel.features(updatedFeatureList);
+
+      api({
+        method: 'DELETE',
+        url: '/feature/'+ item.id,
+        headers: {
+          Authorization: 'Bearer '+ window.localStorage.token
+        }
+      })
+        .then((resp)=> {
+          makeToast(`Deleted feature request: ${item.title} !`)
+        })
+        .catch(({ response }) => {
+
+          viewModel.features(originalFeatureList);
+          makeToast(`Error deleting feature request: ${item.title} !`);
+        });
     },
   };
 
   var retrieve = function() {
     api.get('/', {headers:{Authorization: 'Bearer '+ window.localStorage.token}})
       .then((resp)=> {
-        console.log(resp);
         let features = resp.data.features;
         for (let feature of features) {
           feature.target_date = moment(feature.target_date).format('MM/DD/YYYY')
@@ -29,8 +52,7 @@ export default (container) => {
 
       })
       .catch(({ response }) => {
-        console.log(response)
-        console.warn('Error adding client', response.data.message)
+        makeToast(`Error retrieving feature list!`)
       });
   }
   retrieve();

@@ -12,7 +12,12 @@ export default (container) => {
         name: formFields.name(),
         description: formFields.description(),
       }
-
+      for (let formField in data){
+        if (typeof data[formField] == 'undefined' || data[formField].length <= 0){
+          iqwerty.toast.Toast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`)
+          return;
+        }
+      }
       api({
         method: 'POST',
         url: '/product_area',
@@ -25,8 +30,15 @@ export default (container) => {
           page('/');
         })
         .catch(({ response }) => {
-          //TODO display error messages
-          console.warn('Error adding client', response.data.message)
+          var options = {
+            style: {
+              main: {
+                background: "#5bc0de",
+                color: "black"
+              }
+            }
+          };
+          iqwerty.toast.Toast(`Error adding client!`, options)
         });
     }
   };

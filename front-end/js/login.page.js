@@ -1,4 +1,5 @@
 import api from './api';
+import makeToast from './toast_maker';
 
 export default (container) => {
   var viewModel = {
@@ -28,8 +29,7 @@ export default (container) => {
           page('/');
         })
         .catch(({ response }) => {
-          //TODO display error messages
-          console.warn('Error registering user', response.data.message)
+          makeToast(`Error logging user in!`);
         });
     }
   }

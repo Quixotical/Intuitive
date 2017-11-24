@@ -1,0 +1,67 @@
+  <h2 class="text-center">Edit Feature</h2>
+  <form data-bind="event: {submit: onSubmit}">
+    <div class="form-group">
+      <label for="title">Feature Title</label>
+      <input data-bind="value: featureTitle" type="text" class="form-control" id="title" placeholder="Enter feature title">
+    </div>
+    <div class="form-group">
+      <div class="row">
+        <div class="col">
+          <label for="product-area">Product Area</label>
+          <select data-bind="
+          value: selectedProductArea,
+          options: productAreas,
+          optionsText: 'name',
+          optionsValue: 'id',
+          optionsCaption: '-- Select Product Area --'
+          " class="form-control" id="product-area" name='product-area'>
+          </select>
+        </div>
+
+        <div class="col">
+          <label for="client">Client</label>
+          <select data-bind="
+          value: selectedClient,
+          options: clients,
+          optionsText: 'name',
+          optionsValue: 'id',
+          optionsCaption: '-- Select Clients --',
+          event: {change: checkPriority}
+          " class="form-control" id='clients' name='clients'>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group" data-bind="
+    if: clientPriorities() !== null
+    ">
+      <label for="priority" class="feature-priority-label">Client Priority</label>
+      <p class="text-muted"> Rearrange list to assign feature priorities</p>
+      <div class="box-container" id="sortable" data-bind="attr: {'data-feature_client': currentClient}">
+
+        <!-- ko foreach: newFeature -->
+          <div class="priority-box new shrink" data-bind="text: $parent.featureTitle"></div>
+        <!-- /ko -->
+        <!-- ko foreach: clientPriorities -->
+          <div class="priority-box shrink" data-bind="
+          attr: {
+            'data-feature_id': id
+           }
+          "><p data-bind="text: title"></p></div>
+        <!-- /ko -->
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="target-date">Target Date</label>
+      <input data-bind="value: targetDate" type="date" name="date" id="target-date" class="form-control">
+    </div>
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea data-bind="value: description" placeholder="Enter description" class="form-control" rows="3">
+      </textarea>
+    </div>
+    <div class="text-center">
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+  </form>

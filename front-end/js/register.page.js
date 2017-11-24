@@ -17,8 +17,15 @@ export default (container) => {
           page('/');
         })
         .catch(({ response }) => {
-          //TODO display error messages
-          console.warn('Error registering user', response.data.message)
+          var options = {
+            style: {
+              main: {
+                background: "#5bc0de",
+                color: "black"
+              }
+            }
+          };
+          iqwerty.toast.Toast(`Error registering new user!`, options)
         });
     }
   };

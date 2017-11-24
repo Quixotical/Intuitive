@@ -6,6 +6,8 @@ import featurePage from './feature.page'
 import clientPage from './client.page'
 import productAreaPage from './product_area.page'
 import homePage from './home.page'
+import featureEditPage from './feature_edit.page';
+import makeToast from './toast_maker';
 
 const verifyUser = (ctx, next) => {
   const token = window.localStorage.token
@@ -19,12 +21,13 @@ const verifyUser = (ctx, next) => {
       next();
     })
     .catch((error) => {
+      makeToast(`Error authorizing user!`);
       ctx.authorized = false;
       next();
     });
 }
 
-const fetchPage = (templateName, callback) => {
+const fetchPage = (templateName, callback, context) => {
   fetch(`/templates/${templateName}.html`)
     .then(response => response.text())
     .then( html => {
@@ -32,7 +35,7 @@ const fetchPage = (templateName, callback) => {
       div.id = 'container'
       document.querySelector('#container').replaceWith(div);
       div.innerHTML = html;
-      callback && callback(div)
+      callback && callback(div, context)
   })
 }
 
@@ -46,7 +49,7 @@ let renderContent = (templateName, callback, ctx, next) => {
 
 let renderAuthContent = (templateName, callback, ctx, next) => {
   if(ctx.authorized){
-    fetchPage(templateName, callback)
+    fetchPage(templateName, callback, ctx)
   }else{
     page('/login');
   }
@@ -57,7 +60,7 @@ page('/index', verifyUser, renderAuthContent.bind(null,'home', homePage));
 page('/', verifyUser, renderAuthContent.bind(window,'home', homePage));
 
 page('/feature', verifyUser, renderAuthContent.bind(window,'feature', featurePage));
-page('/feature/:id', verifyUser, renderAuthContent.bind(window, 'feature', featurePage));
+page('/feature/:id', verifyUser, renderAuthContent.bind(window, 'feature_edit', featureEditPage));
 
 page('/client', verifyUser, renderAuthContent.bind(window, 'client', clientPage));
 

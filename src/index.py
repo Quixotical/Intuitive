@@ -265,9 +265,9 @@ class FeatureRequestAPI(Resource):
                                     location='json')
         self.reqparse.add_argument('description', type=str, required=True,
                                     location='json', help='Description required')
-        self.reqparse.add_argument('client_id', type=str, required=True,
+        self.reqparse.add_argument('client', type=str, required=True,
                                     help='Client required', location='json')
-        self.reqparse.add_argument('product_area_id', type=str, location='json',
+        self.reqparse.add_argument('product_area', type=str, location='json',
                                     required=True,
                                     help='Product Area required')
         self.reqparse.add_argument('target_date', type=str, required=True,
@@ -282,7 +282,6 @@ class FeatureRequestAPI(Resource):
 
     @auth.login_required
     def get(self, feature_id):
-
         clients = Client.query.all()
         formatted_clients = make_jsonifiable(Client, clients)
 
@@ -328,8 +327,8 @@ class FeatureRequestAPI(Resource):
             feature = FeatureRequest(
                 title=args['title'],
                 description=args['description'],
-                client_id=args['client_id'],
-                product_area_id=args['product_area_id'],
+                client_id=args['client'],
+                product_area_id=args['product_area'],
                 target_date=args['target_date'],
                 priority=args['priority'],
                 user_id=g.user.id
@@ -341,10 +340,38 @@ class FeatureRequestAPI(Resource):
             return {'error': 'Error saving Feature'}, 400
 
     @auth.login_required
+    def put(self):
+        args = self.reqparse.parse_args()
+
+        features_to_reorder = json.loads(args['submitted_feature_list'])
+
+        for reorder_feature in features_to_reorder:
+            feature_id = reorder_feature['id']
+            updated_feature = FeatureRequest.query.filter_by(id=feature_id).first()
+            updated_feature.priority = reorder_feature['priority']
+            db.session.add(updated_feature)
+            db.session.commit()
+
+        try:
+            feature = FeatureRequest(
+                title=args['title'],
+                description=args['description'],
+                client_id=args['client'],
+                product_area_id=args['product_area'],
+                target_date=args['target_date'],
+                priority=args['priority'],
+                user_id=g.user.id
+            )
+            db.session.add(feature)
+            db.session.commit()
+            return {'message': 'created'}
+        except Exception:
+            return {'error': 'Error saving Feature'}, 400
+    @auth.login_required
     def delete(self, feature_id):
         feature = FeatureRequest.query.filter_by(id=feature_id).first()
         if feature is None:
-            return {'error':'Feature does not exist'}
+            return {'error':'Feature does not exist'}, 400
 
         try:
             FeatureRequest.query.filter_by(id=feature_id).delete()

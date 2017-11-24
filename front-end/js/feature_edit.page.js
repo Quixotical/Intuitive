@@ -1,7 +1,7 @@
 import api from './api';
 import makeToast from './toast_maker';
 
-export default (container) => {
+export default (container, context) => {
 
   var viewModel = {
     submittedFeatureList: ko.observableArray(),
@@ -23,24 +23,14 @@ export default (container) => {
     },
 
     checkPriority(knockoutFields, e) {
-      let client = knockoutFields.clients().find((client) => {
-        return client.id === +e.target.value
-      })
+      console.log('woo');
+      console.log(knockoutFields);
+      let client = getClient(knockoutFields.clients(), e.target.value)
+
       let features;
       if (client){
-        viewModel.clientPriorities([]);
-        console.log(knockoutFields.newFeature());
-        for(let key in knockoutFields.clientsFeatures()){
-          key === client.name ? viewModel.clientPriorities(knockoutFields.clientsFeatures()[key]) : null
-          key === client.name ? viewModel.currentClient(key): null
-        }
+        setPriorityBoxes(knockoutFields, client);
 
-        for(let [idx, feature] of viewModel.clientPriorities().entries()){
-          feature.priority = idx + 2
-        }
-
-        viewModel.submittedFeatureList(viewModel.clientPriorities());
-        viewModel.newFeature([{id:0, title: ''}]);
       }else {
         viewModel.clientPriorities(null);
       }
@@ -70,9 +60,6 @@ export default (container) => {
 
           viewModel.submittedFeatureList(updatedFeatureList);
         },
-        change: function( event, ui ) {},
-        update: function( event, ui ) {},
-
       });
     },
 
@@ -85,17 +72,19 @@ export default (container) => {
         target_date: formFields.targetDate(),
         client: formFields.selectedClient(),
         product_area: formFields.selectedProductArea(),
-
       }
+
       for (let formField in data){
         if (typeof data[formField] == 'undefined' || data[formField].length <= 0){
-          makeToast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`)
+          makeToast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`);
           return;
         }
       }
+
       data['submitted_feature_list']= JSON.stringify(formFields.submittedFeatureList());
+
       api({
-        method: 'POST',
+        method: 'PUT',
         url: '/feature',
         data: data,
         headers: {
@@ -106,21 +95,69 @@ export default (container) => {
           page('/');
         })
         .catch(({ response }) => {
+
           for(let errorKey in response.data.message){
-            makeToast(`${response.data.message[errorKey]}! `)
+            makeToast(`${response.data.message[errorKey]}!`);
           }
-          console.warn('Error registering user', response.data.message)
         });
     }
   }
+
+  let setPriorityBoxes = (clientPriorityFields, client) => {
+    viewModel.selectedClient(client.id);
+    viewModel.selectedProductArea(clientPriorityFields.selectedProductArea())
+    viewModel.clientPriorities([]);
+
+    for(let key in clientPriorityFields.clientsFeatures()){
+      console.log('woo');
+      key === client.name ? viewModel.clientPriorities(clientPriorityFields.clientsFeatures()[key]) : null
+      key === client.name ? viewModel.currentClient(key): null
+    }
+
+    for(let [idx, feature] of viewModel.clientPriorities().entries()){
+      feature.priority = idx + 2
+    }
+
+    viewModel.submittedFeatureList(viewModel.clientPriorities());
+    viewModel.newFeature([{id:0, title: ''}]);
+  }
+
+  let getClient = (clients, selected_client_id) => {
+    return clients.find((client) => {
+      return client.id === +selected_client_id
+    })
+  }
+
   var retrieve = function() {
-    api.get('/feature-priorities', {headers:{Authorization: 'Bearer '+ window.localStorage.token}})
+    api.get('/feature/'+context.params.id, {headers:{Authorization: 'Bearer '+ window.localStorage.token}})
       .then((resp)=> {
+
+        let feature = resp.data.feature[0];
+
+        viewModel.featureTitle(feature.title);
+        viewModel.description(feature.description);
+        viewModel.targetDate(feature.target_date.substr(0,10));
+        viewModel.selectedClient(feature.client_id.toString());
+        viewModel.selectedProductArea(feature.product_area_id);
+        let selectedProductArea = ko.observable(feature.product_area_id);
+
         viewModel.clientsFeatures(resp.data.clients_features)
         viewModel.clients(resp.data.clients);
+
         viewModel.productAreas(resp.data.product_areas);
+
+        let client = getClient(resp.data.clients, feature.client_id);
+        if(client){
+          let clientPriorityFields = {
+            'clientsFeatures': viewModel.clientsFeatures,
+            'selectedClient':  client,
+            'selectedProductArea': selectedProductArea
+          }
+
+          setPriorityBoxes(clientPriorityFields, client);
+        }
       })
-      .catch(({ response }) => {
+      .catch(( response ) => {
         makeToast(`Error retrieving feature!`);
       });
   }
