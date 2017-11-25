@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy_utils import PasswordType, force_auto_coercion
 from flask_cors import CORS
 import config
-import time, datetime, random, string, json
+import time, datetime, random, string, json, re
 from itsdangerous import TimedJSONWebSignatureSerializer as JWT
 from flask_httpauth import HTTPTokenAuth
 from passlib.apps import custom_app_context as pwd_context
@@ -82,6 +82,14 @@ class FeatureRequest(db.Model):
      'priority':self.priority, 'target_date':self.target_date, 'client_id':self.client_id,
      'product_area_id':self.product_area_id})
 
+class InvalidatedAuthTokens(db.Model):
+    __tablename__ = 'invalid_tokens'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    invalid_token = db.Column(db.String(2000))
+
+    def __repr__(self):
+        return str({'id':self.id, 'invalid_token': self.token})
+
 with app.app_context():
     loading = True
     wait_time = 0
@@ -100,6 +108,11 @@ with app.app_context():
 @auth.verify_token
 def verify_token(token):
     g.user = None
+
+    invalidToken = InvalidatedAuthTokens.query.filter_by(invalid_token=token).first()
+    if invalidToken is not None:
+        return False
+
     try:
         data = jwt.loads(token)
     except:
@@ -187,7 +200,7 @@ class LoginAPI(Resource):
         self.reqparse.add_argument('email', type=str, required=True,
                                     help='Email is required', location='json')
         self.reqparse.add_argument('password', type=password_length,
-                                    location='json')
+                                    location='json', required=True)
         self.reqparse.add_argument('email', type=validate_email, location='json')
         self.reqparse.add_argument('email', type=validate_exists, location='json')
         self.reqparse.add_argument('email', type=validate_non_social, location='json')
@@ -202,21 +215,8 @@ class LoginAPI(Resource):
         if not user.verify_password(password):
             return {'error':'Invalid email or password'}, 400
 
-        g.user = user.feature_requests
-        formatted_user = make_jsonifiable(User, user)
-
         token = jwt.dumps({'user':user.social_id})
-        return {'token': token}
-
-class UserAPI(Resource):
-    def get(self, id):
-        pass
-
-    def put(self, id):
-        pass
-
-    def delete(self, id):
-        pass
+        return {'token': token, 'username': user.fullname}
 
 register_fields = {
     'fullname': fields.String,
@@ -247,7 +247,6 @@ class GoogleLogin(Resource):
             db.session.add(user)
             db.session.commit()
 
-        formatted_user = make_jsonifiable(User, user)
         token = jwt.dumps({'user':user.social_id})
 
         return {'token': token}
@@ -471,8 +470,29 @@ class RetrieveFeatureInfo(Resource):
         return {'clients_features':client_list, 'clients': formatted_clients,
                 'product_areas': formatted_product_areas}
 
+class LogoutAPI(Resource):
+    def __init__(self):
+        self.reqparse = reqparse.RequestParser()
+        self.reqparse.add_argument('Authorization',
+                            location='headers')
+        super(LogoutAPI, self).__init__()
+
+    @auth.login_required
+    def get(self):
+        args = self.reqparse.parse_args()
+
+        try:
+            token = re.sub('Bearer ', '', args['Authorization'])
+
+            invalid_token = InvalidatedAuthTokens(invalid_token=token)
+            db.session.add(invalid_token)
+            db.session.commit()
+            return {'success': 'logged out'}
+        except Exception:
+            return {'error': 'Unable to invalidate User token'}, 400
+
+
 api = Api(app)
-api.add_resource(UserAPI, '/users/<int:id>', endpoint='user')
 api.add_resource(RegisterAPI, '/register', endpoint='register')
 api.add_resource(VerifyAuthAPI, '/auth/verify', endpoint='auth')
 api.add_resource(LoginAPI, '/login', endpoint='login')
@@ -483,6 +503,7 @@ api.add_resource(FeatureRequestAPI, '/feature', endpoint='feature')
 api.add_resource(FeatureRequestAPI, '/feature/<feature_id>')
 api.add_resource(ClientAPI, '/client', endpoint='client')
 api.add_resource(ProductAreaAPI, '/product_area', endpoint='product_area')
+api.add_resource(LogoutAPI, '/logout');
 
 if __name__ == "__main__":
     app.secret_key = app.config['SECRET_KEY']
