@@ -55,6 +55,13 @@ export default (container) => {
         makeToast(`Error retrieving feature list!`)
       });
   }
-  retrieve();
+
+  if(window.localStorage.googleLogin){
+    window.localStorage.removeItem('googleLogin')
+    window.location.reload();
+  }else{
+    retrieve();
+  }
+
   ko.applyBindings(viewModel, container);
 }

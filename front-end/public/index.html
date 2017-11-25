@@ -13,12 +13,25 @@
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src="/imported_js/toast.js"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://apis.google.com/js/platform.js?onload=onLoadCallback async defer"></script>
  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
 
   </head>
   <body>
-    <div class="title-container">
+    <div id="title-container" >
+      <div class="row logout">
+          <div class="col-md-3">
+            <h4>Welcome <span data-bind="text: userName"</h4>
+          </div>
+          <div class="col-md-7"></div>
+          <div class="col-md-2 title">
+            <h3 id="logout-title"><a data-bind="
+              text: logout,
+              click: onLogoutClick
+              " href="#"></a></h3>
+          </div>
+      </div>
       <h1>Intuitive Web Solutions</h1>
       <h3>Enhancing your world</h3>
     </div>

@@ -113,6 +113,7 @@ export default (container) => {
         });
     }
   }
+
   var retrieve = function() {
     api.get('/feature-priorities', {headers:{Authorization: 'Bearer '+ window.localStorage.token}})
       .then((resp)=> {

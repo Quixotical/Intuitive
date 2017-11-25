@@ -14,6 +14,8 @@ export default (container) => {
       })
         .then((resp)=> {
           window.localStorage.setItem('token', resp.data.token)
+          window.localStorage.setItem('intuitiveName', formFields.fullname())
+          window.localStorage.setItem('intuitiveLogout', 'Logout')
           page('/');
         })
         .catch(({ response }) => {

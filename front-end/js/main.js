@@ -17,11 +17,12 @@ const verifyUser = (ctx, next) => {
   fetch(`${'http://'}${location.host}:${PORT}` + '/auth/verify', { headers })
     .then(r => r.json())
     .then((result) => {
+      console.warn({result})
       ctx.authorized = result.authorized;
       next();
     })
     .catch((error) => {
-      makeToast(`Error authorizing user!`);
+      console.error({error})
       ctx.authorized = false;
       next();
     });
@@ -41,16 +42,26 @@ const fetchPage = (templateName, callback, context) => {
 
 let renderContent = (templateName, callback, ctx, next) => {
   if(ctx.authorized){
+    viewModel.logout('Logout')
+    // viewModel.userName(window.localStorage.intuitiveName)
     page('/');
   }else{
+    console.log(viewModel);
+    viewModel.logout('');
+    // viewModel.userName('');
     fetchPage(templateName, callback);
   }
 }
 
 let renderAuthContent = (templateName, callback, ctx, next) => {
   if(ctx.authorized){
+    console.log('happy', viewModel);
+    viewModel.logout('Logout')
+    viewModel.userName(window.localStorage.intuitiveName)
     fetchPage(templateName, callback, ctx)
   }else{
+    viewModel.logout('');
+    // viewModel.userName('');
     page('/login');
   }
 }
@@ -73,14 +84,18 @@ page('*', function(){
   page('/login')
 });
 
-window.onSignIn = function(googleUser) {
-
+window.onSignIn = function(googleUser, e) {
   var profile = googleUser.getBasicProfile();
   var data = {
     'fullname': profile.getName(),
     'email': profile.getEmail(),
     'social_id': 'gogole'+profile.getId(),
   }
+  window.localStorage.setItem('googleLogin', true);
+  window.localStorage.setItem('intuitiveName', profile.getName())
+  window.localStorage.setItem('intuitiveLogout', 'Logout')
+
+  viewModel.userName = profile.getName();
   var xml = new XMLHttpRequest();
   xml.open("POST", "http://localhost:7777/login/google", true);
   xml.setRequestHeader("Content-Type", "application/json");
@@ -89,7 +104,7 @@ window.onSignIn = function(googleUser) {
       if (xml.status === 200) {
         var response = JSON.parse(xml.responseText);
         window.localStorage.setItem('token', response.token);
-        page('/');
+        page('/index');
       }else{
         console.warn('oopsie daisie');
       }
@@ -98,11 +113,40 @@ window.onSignIn = function(googleUser) {
   xml.send(JSON.stringify(data));
 }
 
+window.logout = function() {
+
+}
+
+var viewModel = {
+  userName: ko.observable(''),
+  logout: ko.observable(''),
+  onLogoutClick () {
+    const token = window.localStorage.token
+    const headers = { 'Authorization': `Bearer ${token}` }
+    const PORT = 7777
+
+    fetch(`${'http://'}${location.host}:${PORT}` + '/logout', { headers })
+      .then(r => r.json())
+      .then((result) => {
+        window.localStorage.clear()
+        page('/login')
+      })
+      .catch((error) => {
+        window.localStorage.clear()
+        page('/login')
+      });
+  }
+}
+
 function ready(callback) {
   if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading"){
     callback();
+    ko.applyBindings(viewModel, window.document.getElementById('title-container'));
   } else {
-    document.addEventListener('DOMContentLoaded', () => callback());
+    document.addEventListener('DOMContentLoaded', () => {
+      callback(),
+      ko.applyBindings(viewModel, window.document.getElementById('title-container'))
+    });
   }
 }
 

@@ -8,27 +8,35 @@
     margin: 0 auto;
   }
 }
-.title-container {
-  margin-top:40px;
+#title-container {
   text-align:center;
   font-size:40px;
 }
-.title-container h1 {
+#title-container h1 {
   color: deepskyblue;
   font-size: 9.4675vw;
 }
-.title-container h3 {
+#title-container h3 {
   font-size: 6.40vw;
 }
 @media screen and (min-width:500px){
-  .title-container h3 {
+  #title-container h3 {
     font-size: 32px;
   }
 }
 
 @media screen and (min-width:845px){
-  .title-container h1 {
+  #title-container h1 {
     font-size:80px;
+  }
+}
+.logout {
+  text-align: right;
+  margin: 10px 10px 0 0;
+}
+@media screen and (min-width: 768px){
+  .logout {
+    text-align:center;
   }
 }
 
@@ -162,4 +170,40 @@ FEATURE PAGE
 }
 .feature-priority-label {
   font-size:32px;
+}
+/**
+REGISTER PAGE
+*/
+#register {
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  max-width: 500px;
+  border: 1px solid lightgray;
+  padding: 20px 30px;
+}
+#register .btn {
+  margin-top: 30px;
+}
+#register .form-group .btn{
+  margin: 0;
+}
+/**
+LOGIN PAGE
+*/
+#login {
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  max-width: 500px;
+}
+#google-button {
+  margin: 15px auto 15px;
+}
+.login-form {
+  border: 1px solid lightgray;
+  padding:20px 30px;
+}
+.login-form p {
+  margin:15px 0 0 0;
 }
