@@ -170,12 +170,6 @@ class RegisterAPI(Resource):
 
         return {'token': token}, 201
 
-def validate_exists(value):
-    user = User.query.filter_by(email=value).first()
-    if user is None:
-        raise ValueError('User does not exist for this email!')
-    return value
-
 def validate_non_social(value):
     user = User.query.filter_by(email=value).first()
     if user is None:
@@ -199,10 +193,12 @@ class LoginAPI(Resource):
         self.reqparse = reqparse.RequestParser()
         self.reqparse.add_argument('email', type=str, required=True,
                                     help='Email is required', location='json')
+        self.reqparse.add_argument('password', type=str,
+                                    location='json', required=True, help="Password is required")
         self.reqparse.add_argument('password', type=password_length,
                                     location='json', required=True)
-        self.reqparse.add_argument('email', type=validate_email, location='json')
-        self.reqparse.add_argument('email', type=validate_exists, location='json')
+        self.reqparse.add_argument('email', type=validate_email, location='json',
+                                            help="Invalid email format")
         self.reqparse.add_argument('email', type=validate_non_social, location='json')
         super(LoginAPI, self).__init__()
 
