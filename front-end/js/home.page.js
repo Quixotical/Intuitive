@@ -1,5 +1,6 @@
 import api from './api';
 import makeToast from './toast_maker';
+import errorHandler from './error_handler';
 
 export default (container) => {
   var viewModel = {
@@ -32,11 +33,7 @@ export default (container) => {
         .then((resp)=> {
           makeToast(`Deleted feature request: ${item.title} !`)
         })
-        .catch(({ response }) => {
-
-          viewModel.features(originalFeatureList);
-          makeToast(`Error deleting feature request: ${item.title} !`);
-        });
+        .catch(errorHandler)
     },
   };
 
@@ -51,9 +48,7 @@ export default (container) => {
         viewModel.userFeatures(resp.data.user_features);
 
       })
-      .catch(({ response }) => {
-        makeToast(`Error retrieving feature list!`)
-      });
+      .catch(errorHandler)
   }
 
   if(window.localStorage.googleLogin){

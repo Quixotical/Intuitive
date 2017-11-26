@@ -1,5 +1,7 @@
 import api from './api';
 import makeToast from './toast_maker';
+import Validator from './validator';
+import errorHandler from './error_handler';
 
 export default (container) => {
   var viewModel = {
@@ -30,21 +32,26 @@ export default (container) => {
 
     onSubmit (formFields) {
 
-      api.post('/login', {
+      let data = {
         email: formFields.email(),
         password: formFields.password(),
-      })
+      }
+
+      let inputValidator = new Validator(data, data, {password:8});
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast(`${inputValidator.error}`);
+        return;
+      }
+
+      api.post('/login', data)
         .then((resp)=> {
           window.localStorage.setItem('token', resp.data.token)
           window.localStorage.setItem('intuitiveName', resp.data.username);
           window.localStorage.setItem('intuitiveLogout', 'Logout');
           page('/');
         })
-        .catch(({ response }) => {
-          for(let errorKey in response.data.message){
-            makeToast(`${response.data.message[errorKey]}! `)
-          }
-        });
+        .catch(errorHandler);
     }
   }
   ko.applyBindings(viewModel, container);

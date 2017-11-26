@@ -1,5 +1,7 @@
 import api from './api';
 import makeToast from './toast_maker';
+import Validator from './validator';
+import errorHandler from './error_handler';
 
 export default (container) => {
 
@@ -87,12 +89,14 @@ export default (container) => {
         product_area: formFields.selectedProductArea(),
 
       }
-      for (let formField in data){
-        if (typeof data[formField] == 'undefined' || data[formField].length <= 0){
-          makeToast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`)
-          return;
-        }
+
+      let inputValidator = new Validator(data, data);
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast(`${inputValidator.error}`);
+        return;
       }
+
       data['submitted_feature_list']= JSON.stringify(formFields.submittedFeatureList());
       api({
         method: 'POST',
@@ -105,12 +109,7 @@ export default (container) => {
         .then((resp)=> {
           page('/');
         })
-        .catch(({ response }) => {
-          for(let errorKey in response.data.message){
-            makeToast(`${response.data.message[errorKey]}! `)
-          }
-          console.warn('Error registering user', response.data.message)
-        });
+        .catch(errorHandler)
     }
   }
 
@@ -121,9 +120,7 @@ export default (container) => {
         viewModel.clients(resp.data.clients);
         viewModel.productAreas(resp.data.product_areas);
       })
-      .catch(({ response }) => {
-        makeToast(`Error retrieving feature!`);
-      });
+      .catch(errorHandler)
   }
   retrieve();
   ko.applyBindings(viewModel, container);

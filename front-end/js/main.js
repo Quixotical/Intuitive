@@ -43,25 +43,24 @@ const fetchPage = (templateName, callback, context) => {
 let renderContent = (templateName, callback, ctx, next) => {
   if(ctx.authorized){
     viewModel.logout('Logout')
-    // viewModel.userName(window.localStorage.intuitiveName)
+    viewModel.userName(window.localStorage.intuitiveName)
     page('/');
   }else{
     console.log(viewModel);
     viewModel.logout('');
-    // viewModel.userName('');
+    viewModel.userName('');
     fetchPage(templateName, callback);
   }
 }
 
 let renderAuthContent = (templateName, callback, ctx, next) => {
   if(ctx.authorized){
-    console.log('happy', viewModel);
     viewModel.logout('Logout')
-    viewModel.userName(window.localStorage.intuitiveName)
+    viewModel.userName(window.localStorage.intuitiveName);
     fetchPage(templateName, callback, ctx)
   }else{
     viewModel.logout('');
-    // viewModel.userName('');
+    viewModel.userName('');
     page('/login');
   }
 }
@@ -95,7 +94,6 @@ window.onSignIn = function(googleUser, e) {
   window.localStorage.setItem('intuitiveName', profile.getName())
   window.localStorage.setItem('intuitiveLogout', 'Logout')
 
-  viewModel.userName = profile.getName();
   var xml = new XMLHttpRequest();
   xml.open("POST", "http://localhost:7777/login/google", true);
   xml.setRequestHeader("Content-Type", "application/json");

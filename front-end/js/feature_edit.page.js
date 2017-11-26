@@ -1,5 +1,7 @@
 import api from './api';
 import makeToast from './toast_maker';
+import Validator from './validator';
+import errorHandler from './error_handler';
 
 export default (container, context) => {
 
@@ -23,46 +25,16 @@ export default (container, context) => {
     },
 
     checkPriority(knockoutFields, e) {
-      console.log('woo');
-      console.log(knockoutFields);
       let client = getClient(knockoutFields.clients(), e.target.value)
 
       let features;
       if (client){
         setPriorityBoxes(knockoutFields, client);
-
+        setSortableBoxes();
       }else {
         viewModel.clientPriorities(null);
       }
-
-
-      $(".box-container").sortable({
-        revert: true,
-        scroll: true,
-        placeholder: "sortable-placeholder",
-        stop: function(event,ui){
-          let updatedFeatureList = []
-          let priorityBoxes = ui.item[0].parentNode.querySelectorAll('.priority-box');
-          for(let [idx, boxObject] of priorityBoxes.entries()){
-            let found = false;
-            for(let feature of viewModel.clientPriorities()){
-
-              if (feature.id === +boxObject.dataset.feature_id){
-                found = true;
-                feature.priority = idx + 1
-                updatedFeatureList.push(feature)
-              }
-            }
-            if(found === false){
-              viewModel.priority(idx + 1)
-            }
-          }
-
-          viewModel.submittedFeatureList(updatedFeatureList);
-        },
-      });
     },
-
     onSubmit (formFields) {
 
       let data = {
@@ -74,18 +46,20 @@ export default (container, context) => {
         product_area: formFields.selectedProductArea(),
       }
 
-      for (let formField in data){
-        if (typeof data[formField] == 'undefined' || data[formField].length <= 0){
-          makeToast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`);
-          return;
-        }
+      let context_id = context.params.id;
+
+      let inputValidator = new Validator(data, data);
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast(`${inputValidator.error}`);
+        return;
       }
 
       data['submitted_feature_list']= JSON.stringify(formFields.submittedFeatureList());
 
       api({
         method: 'PUT',
-        url: '/feature',
+        url: '/feature/' + context_id,
         data: data,
         headers: {
           Authorization: 'Bearer '+ window.localStorage.token
@@ -94,13 +68,38 @@ export default (container, context) => {
         .then((resp)=> {
           page('/');
         })
-        .catch(({ response }) => {
-
-          for(let errorKey in response.data.message){
-            makeToast(`${response.data.message[errorKey]}!`);
-          }
-        });
+        .catch(errorHandler);
     }
+  }
+
+  let setSortableBoxes = () => {
+    $(".box-container").sortable({
+      revert: true,
+      scroll: true,
+      placeholder: "sortable-placeholder",
+      stop: onStopSorting
+    });
+  }
+
+  let onStopSorting = (event,ui) => {
+    let updatedFeatureList = []
+    let priorityBoxes = ui.item[0].parentNode.querySelectorAll('.priority-box');
+    for(let [idx, boxObject] of priorityBoxes.entries()){
+      let found = false;
+      for(let feature of viewModel.clientPriorities()){
+
+        if (feature.id === +boxObject.dataset.feature_id){
+          found = true;
+          feature.priority = idx + 1
+          updatedFeatureList.push(feature)
+        }
+      }
+      if(found === false){
+        viewModel.priority(idx + 1)
+      }
+    }
+
+    viewModel.submittedFeatureList(updatedFeatureList);
   }
 
   let setPriorityBoxes = (clientPriorityFields, client) => {
@@ -138,7 +137,7 @@ export default (container, context) => {
         viewModel.description(feature.description);
         viewModel.targetDate(feature.target_date.substr(0,10));
         viewModel.selectedClient(feature.client_id.toString());
-        viewModel.selectedProductArea(feature.product_area_id);
+        viewModel.selectedProductArea(feature.product_area_id.toString());
         let selectedProductArea = ko.observable(feature.product_area_id);
 
         viewModel.clientsFeatures(resp.data.clients_features)
@@ -156,10 +155,10 @@ export default (container, context) => {
 
           setPriorityBoxes(clientPriorityFields, client);
         }
+        setSortableBoxes()
+
       })
-      .catch(( response ) => {
-        makeToast(`Error retrieving feature!`);
-      });
+      .catch(errorHandler);
   }
   retrieve();
   ko.applyBindings(viewModel, container);

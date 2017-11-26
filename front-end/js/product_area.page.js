@@ -1,4 +1,6 @@
 import api from './api';
+import Validator from './validator';
+import errorHandler from './error_handler';
 
 export default (container) => {
 
@@ -12,12 +14,14 @@ export default (container) => {
         name: formFields.name(),
         description: formFields.description(),
       }
-      for (let formField in data){
-        if (typeof data[formField] == 'undefined' || data[formField].length <= 0){
-          iqwerty.toast.Toast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`)
-          return;
-        }
+
+      let inputValidator = new Validator(data, data);
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast(`${inputValidator.error}`);
+        return;
       }
+
       api({
         method: 'POST',
         url: '/product_area',
@@ -29,17 +33,7 @@ export default (container) => {
         .then((resp)=> {
           page('/');
         })
-        .catch(({ response }) => {
-          var options = {
-            style: {
-              main: {
-                background: "#5bc0de",
-                color: "black"
-              }
-            }
-          };
-          iqwerty.toast.Toast(`Error adding client!`, options)
-        });
+        .catch(errorHandler)
     }
   };
   ko.applyBindings(viewModel, container);

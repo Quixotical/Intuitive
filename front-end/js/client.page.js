@@ -1,5 +1,7 @@
 import api from './api';
 import makeToast from './toast_maker';
+import Validator from './validator';
+import errorHandler from './error_handler';
 
 export default (container) => {
 
@@ -11,12 +13,14 @@ export default (container) => {
       let data = {
         name: formFields.name()
       }
-      for (let formField in data){
-        if (typeof data[formField] == 'undefined' || data[formField].length <= 0){
-          makeToast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`)
-          return;
-        }
+
+      let inputValidator = new Validator(data, data);
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast(`${inputValidator.error}`);
+        return;
       }
+
       api({
         method: 'POST',
         url: '/client',
@@ -29,10 +33,7 @@ export default (container) => {
           console.log('woooo')
           page('/');
         })
-        .catch(({ response }) => {
-          //TODO display error messages
-          console.warn('Error adding client', response.data.message)
-        });
+        .catch(errorHandler)
     }
   };
   ko.applyBindings(viewModel, container);
