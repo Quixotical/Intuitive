@@ -31,8 +31,13 @@
   }
 }
 .logout {
-  text-align: right;
-  margin: 10px 10px 0 0;
+  display: flex;
+  justify-content: space-between;
+  margin:0 auto;
+  padding: 0 .3em;
+  align-items: center;
+  flex-wrap: wrap;
+  max-width: 800px;
 }
 @media screen and (min-width: 768px){
   .logout {
