@@ -209,7 +209,7 @@ class LoginAPI(Resource):
 
         user = User.query.filter_by(email=email).first()
         if not user.verify_password(password):
-            return {'error':'Invalid email or password'}, 400
+            return {'message': {'login_error': 'Invalid email or password'}}, 400
 
         token = jwt.dumps({'user':user.social_id})
         return {'token': token, 'username': user.fullname}
@@ -332,48 +332,42 @@ class FeatureRequestAPI(Resource):
             db.session.commit()
             return {'message': 'created'}
         except Exception:
-            return {'error': 'Error saving Feature'}, 400
+            return {'message': {'error': 'Error saving Feature'}}, 400
 
     @auth.login_required
-    def put(self):
+    def put(self, feature_id):
         args = self.reqparse.parse_args()
 
         features_to_reorder = json.loads(args['submitted_feature_list'])
 
         for reorder_feature in features_to_reorder:
-            feature_id = reorder_feature['id']
-            updated_feature = FeatureRequest.query.filter_by(id=feature_id).first()
+            reorder_id = reorder_feature['id']
+            updated_feature = FeatureRequest.query.filter_by(id=reorder_id).first()
             updated_feature.priority = reorder_feature['priority']
             db.session.add(updated_feature)
             db.session.commit()
 
+        update_feature = FeatureRequest.query.filter_by(id=feature_id).first()
         try:
-            feature = FeatureRequest(
-                title=args['title'],
-                description=args['description'],
-                client_id=args['client'],
-                product_area_id=args['product_area'],
-                target_date=args['target_date'],
-                priority=args['priority'],
-                user_id=g.user.id
-            )
-            db.session.add(feature)
+            update_feature.priority = args['priority']
+            db.session.add(update_feature)
             db.session.commit()
-            return {'message': 'created'}
+            return {'message': 'updated'}
         except Exception:
-            return {'error': 'Error saving Feature'}, 400
+            return {'message': {'error': 'Error saving Feature'}}, 400
+
     @auth.login_required
     def delete(self, feature_id):
         feature = FeatureRequest.query.filter_by(id=feature_id).first()
         if feature is None:
-            return {'error':'Feature does not exist'}, 400
+            return {'message' :{'error':'Feature does not exist'}}, 400
 
         try:
             FeatureRequest.query.filter_by(id=feature_id).delete()
             db.session.commit()
             return {'success': 'Feature deleted'}
         except Exception:
-            return {'error': 'Unable to delete feature at this time'}
+            return {'message': {'error': 'Unable to delete feature at this time'}}
 
 class RetrieveFeatures(Resource):
     @auth.login_required
@@ -386,7 +380,6 @@ class RetrieveFeatures(Resource):
             FeatureRequest.priority
             ).all()
 
-
             formatted_features = format_features(FeatureRequest, features)
 
             for feature in user_features:
@@ -397,7 +390,7 @@ class RetrieveFeatures(Resource):
             return {'features': formatted_features, 'user_features': formatted_user_features,
                     'user_name': g.user.fullname}
         except Exception:
-            return {'error': 'Server error'}, 500
+            return {'message': {'error': 'Server error'}}, 500
 
 class ClientAPI(Resource):
     def __init__(self):
@@ -485,7 +478,7 @@ class LogoutAPI(Resource):
             db.session.commit()
             return {'success': 'logged out'}
         except Exception:
-            return {'error': 'Unable to invalidate User token'}, 400
+            return {'message': {'error': 'Unable to invalidate User token'}}, 400
 
 
 api = Api(app)
@@ -496,7 +489,7 @@ api.add_resource(GoogleLogin, '/login/google', endpoint='google_login')
 api.add_resource(RetrieveFeatures, '/', endpoint='home')
 api.add_resource(RetrieveFeatureInfo, '/feature-priorities', endpoint='feature_priority')
 api.add_resource(FeatureRequestAPI, '/feature', endpoint='feature')
-api.add_resource(FeatureRequestAPI, '/feature/<feature_id>')
+api.add_resource(FeatureRequestAPI, '/feature/<string:feature_id>')
 api.add_resource(ClientAPI, '/client', endpoint='client')
 api.add_resource(ProductAreaAPI, '/product_area', endpoint='product_area')
 api.add_resource(LogoutAPI, '/logout');
