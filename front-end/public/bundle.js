@@ -5,13 +5,101 @@ var api = axios.create({
   baseURL: 'http://localhost:7777/'
 });
 
+class Validator {
+
+  constructor(allFields, requiredFields, lengthReqFields=null, customReqFields=null){
+
+    this.allFields = allFields;
+    this.requiredFields = requiredFields;
+    this.lengthReqFields = lengthReqFields;
+    this.customReqFields = customReqFields;
+
+    this.error = false;
+  }
+
+  validate(){
+
+        if(!this.error){
+          for(let key in this.requiredFields){
+
+            let validationError = typeof this.requiredFields[key] === 'undefined' ||
+                                          this.requiredFields[key].length === 0 ?
+                                          key :
+                                          null;
+            if(validationError){
+              this.error = key.replace(/_/, ' ') + ' is required';
+              break;
+            }
+          }
+        }
+
+        if(!this.error){
+          for(let key in this.lengthReqFields){
+            let validationError = typeof this.allFields[key] !== 'undefined' &&
+                    this.allFields[key].length < this.lengthReqFields[key] ?
+                                                                      key :
+                                                                      null;
+            if(validationError){
+              this.error = key.replace(/_/, ' ') + ' must be ' + this.lengthReqFields[key] + ' characters long';
+              break;
+            }
+          }
+        }
+    }
+}
+
+function makeToast$1 (message) {
+  let options = {
+    style: {
+      main: {
+        background: "#5bc0de",
+        color: "black"
+      }
+    },
+    settings: {
+		    duration: 2000
+    }
+  };
+  iqwerty.toast.Toast(message, options);
+}
+
+function errorHandler(error) {
+  try {
+    let messages = error.response.data.message;
+
+    for(let errorKey in messages){
+      makeToast$1(`${messages[errorKey]}! `);
+    }
+  } catch (e) {
+    if(e instanceof Error){
+      makeToast$1(e.message);
+    }else{
+      makeToast$1('Error with server');
+    }
+  }
+}
+
 var registerPage = (container) => {
 
   var viewModel = {
     fullname: ko.observable(),
     email: ko.observable(),
     password: ko.observable(),
+
     onSubmit (formFields) {
+      let data = {
+        fullname: formFields.fullname(),
+        email: formFields.email(),
+        password: formFields.password(),
+      };
+
+      let inputValidator = new Validator(data, data, {password:8, fullname: 6});
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast$1(`${inputValidator.error}`);
+        return;
+      }
+
       api.post('/register', {
         fullname: formFields.fullname(),
         email: formFields.email(),
@@ -23,33 +111,12 @@ var registerPage = (container) => {
           window.localStorage.setItem('intuitiveLogout', 'Logout');
           page('/');
         })
-        .catch(({ response }) => {
-          var options = {
-            style: {
-              main: {
-                background: "#5bc0de",
-                color: "black"
-              }
-            }
-          };
-          iqwerty.toast.Toast(`Error registering new user!`, options);
-        });
-    }
-  };
+        .catch(errorHandler);
+      }
+    };
+
   ko.applyBindings(viewModel, container);
 };
-
-function makeToast (message) {
-  let options = {
-    style: {
-      main: {
-        background: "#5bc0de",
-        color: "black"
-      }
-    }
-  };
-  iqwerty.toast.Toast(message, options);
-}
 
 var loginPage = (container) => {
   var viewModel = {
@@ -80,21 +147,26 @@ var loginPage = (container) => {
 
     onSubmit (formFields) {
 
-      api.post('/login', {
+      let data = {
         email: formFields.email(),
         password: formFields.password(),
-      })
+      };
+
+      let inputValidator = new Validator(data, data, {password:8});
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast$1(`${inputValidator.error}`);
+        return;
+      }
+
+      api.post('/login', data)
         .then((resp)=> {
           window.localStorage.setItem('token', resp.data.token);
           window.localStorage.setItem('intuitiveName', resp.data.username);
           window.localStorage.setItem('intuitiveLogout', 'Logout');
           page('/');
         })
-        .catch(({ response }) => {
-          for(let errorKey in response.data.message){
-            makeToast(`${response.data.message[errorKey]}! `);
-          }
-        });
+        .catch(errorHandler);
     }
   };
   ko.applyBindings(viewModel, container);
@@ -187,12 +259,14 @@ var featurePage = (container) => {
         product_area: formFields.selectedProductArea(),
 
       };
-      for (let formField in data){
-        if (typeof data[formField] == 'undefined' || data[formField].length <= 0){
-          makeToast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`);
-          return;
-        }
+
+      let inputValidator = new Validator(data, data);
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast$1(`${inputValidator.error}`);
+        return;
       }
+
       data['submitted_feature_list']= JSON.stringify(formFields.submittedFeatureList());
       api({
         method: 'POST',
@@ -205,12 +279,7 @@ var featurePage = (container) => {
         .then((resp)=> {
           page('/');
         })
-        .catch(({ response }) => {
-          for(let errorKey in response.data.message){
-            makeToast(`${response.data.message[errorKey]}! `);
-          }
-          console.warn('Error registering user', response.data.message);
-        });
+        .catch(errorHandler);
     }
   };
 
@@ -221,9 +290,7 @@ var featurePage = (container) => {
         viewModel.clients(resp.data.clients);
         viewModel.productAreas(resp.data.product_areas);
       })
-      .catch(({ response }) => {
-        makeToast(`Error retrieving feature!`);
-      });
+      .catch(errorHandler);
   };
   retrieve();
   ko.applyBindings(viewModel, container);
@@ -239,12 +306,14 @@ var clientPage = (container) => {
       let data = {
         name: formFields.name()
       };
-      for (let formField in data){
-        if (typeof data[formField] == 'undefined' || data[formField].length <= 0){
-          makeToast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`);
-          return;
-        }
+
+      let inputValidator = new Validator(data, data);
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast$1(`${inputValidator.error}`);
+        return;
       }
+
       api({
         method: 'POST',
         url: '/client',
@@ -257,10 +326,7 @@ var clientPage = (container) => {
           console.log('woooo');
           page('/');
         })
-        .catch(({ response }) => {
-          //TODO display error messages
-          console.warn('Error adding client', response.data.message);
-        });
+        .catch(errorHandler);
     }
   };
   ko.applyBindings(viewModel, container);
@@ -278,12 +344,14 @@ var productAreaPage = (container) => {
         name: formFields.name(),
         description: formFields.description(),
       };
-      for (let formField in data){
-        if (typeof data[formField] == 'undefined' || data[formField].length <= 0){
-          iqwerty.toast.Toast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`);
-          return;
-        }
+
+      let inputValidator = new Validator(data, data);
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast(`${inputValidator.error}`);
+        return;
       }
+
       api({
         method: 'POST',
         url: '/product_area',
@@ -295,17 +363,7 @@ var productAreaPage = (container) => {
         .then((resp)=> {
           page('/');
         })
-        .catch(({ response }) => {
-          var options = {
-            style: {
-              main: {
-                background: "#5bc0de",
-                color: "black"
-              }
-            }
-          };
-          iqwerty.toast.Toast(`Error adding client!`, options);
-        });
+        .catch(errorHandler);
     }
   };
   ko.applyBindings(viewModel, container);
@@ -340,13 +398,9 @@ var homePage = (container) => {
         }
       })
         .then((resp)=> {
-          makeToast(`Deleted feature request: ${item.title} !`);
+          makeToast$1(`Deleted feature request: ${item.title} !`);
         })
-        .catch(({ response }) => {
-
-          viewModel.features(originalFeatureList);
-          makeToast(`Error deleting feature request: ${item.title} !`);
-        });
+        .catch(errorHandler);
     },
   };
 
@@ -361,9 +415,7 @@ var homePage = (container) => {
         viewModel.userFeatures(resp.data.user_features);
 
       })
-      .catch(({ response }) => {
-        makeToast(`Error retrieving feature list!`);
-      });
+      .catch(errorHandler);
   };
 
   if(window.localStorage.googleLogin){
@@ -398,45 +450,15 @@ var featureEditPage = (container, context) => {
     },
 
     checkPriority(knockoutFields, e) {
-      console.log('woo');
-      console.log(knockoutFields);
       let client = getClient(knockoutFields.clients(), e.target.value);
 
       if (client){
         setPriorityBoxes(knockoutFields, client);
-
+        setSortableBoxes();
       }else {
         viewModel.clientPriorities(null);
       }
-
-
-      $(".box-container").sortable({
-        revert: true,
-        scroll: true,
-        placeholder: "sortable-placeholder",
-        stop: function(event,ui){
-          let updatedFeatureList = [];
-          let priorityBoxes = ui.item[0].parentNode.querySelectorAll('.priority-box');
-          for(let [idx, boxObject] of priorityBoxes.entries()){
-            let found = false;
-            for(let feature of viewModel.clientPriorities()){
-
-              if (feature.id === +boxObject.dataset.feature_id){
-                found = true;
-                feature.priority = idx + 1;
-                updatedFeatureList.push(feature);
-              }
-            }
-            if(found === false){
-              viewModel.priority(idx + 1);
-            }
-          }
-
-          viewModel.submittedFeatureList(updatedFeatureList);
-        },
-      });
     },
-
     onSubmit (formFields) {
 
       let data = {
@@ -448,18 +470,20 @@ var featureEditPage = (container, context) => {
         product_area: formFields.selectedProductArea(),
       };
 
-      for (let formField in data){
-        if (typeof data[formField] == 'undefined' || data[formField].length <= 0){
-          makeToast(`${formField.replace(/_/, ' ').toUpperCase()} IS REQUIRED`);
-          return;
-        }
+      let context_id = context.params.id;
+
+      let inputValidator = new Validator(data, data);
+      inputValidator.validate();
+      if(inputValidator.error){
+        makeToast$1(`${inputValidator.error}`);
+        return;
       }
 
       data['submitted_feature_list']= JSON.stringify(formFields.submittedFeatureList());
 
       api({
         method: 'PUT',
-        url: '/feature',
+        url: '/feature/' + context_id,
         data: data,
         headers: {
           Authorization: 'Bearer '+ window.localStorage.token
@@ -468,13 +492,38 @@ var featureEditPage = (container, context) => {
         .then((resp)=> {
           page('/');
         })
-        .catch(({ response }) => {
-
-          for(let errorKey in response.data.message){
-            makeToast(`${response.data.message[errorKey]}!`);
-          }
-        });
+        .catch(errorHandler);
     }
+  };
+
+  let setSortableBoxes = () => {
+    $(".box-container").sortable({
+      revert: true,
+      scroll: true,
+      placeholder: "sortable-placeholder",
+      stop: onStopSorting
+    });
+  };
+
+  let onStopSorting = (event,ui) => {
+    let updatedFeatureList = [];
+    let priorityBoxes = ui.item[0].parentNode.querySelectorAll('.priority-box');
+    for(let [idx, boxObject] of priorityBoxes.entries()){
+      let found = false;
+      for(let feature of viewModel.clientPriorities()){
+
+        if (feature.id === +boxObject.dataset.feature_id){
+          found = true;
+          feature.priority = idx + 1;
+          updatedFeatureList.push(feature);
+        }
+      }
+      if(found === false){
+        viewModel.priority(idx + 1);
+      }
+    }
+
+    viewModel.submittedFeatureList(updatedFeatureList);
   };
 
   let setPriorityBoxes = (clientPriorityFields, client) => {
@@ -512,7 +561,7 @@ var featureEditPage = (container, context) => {
         viewModel.description(feature.description);
         viewModel.targetDate(feature.target_date.substr(0,10));
         viewModel.selectedClient(feature.client_id.toString());
-        viewModel.selectedProductArea(feature.product_area_id);
+        viewModel.selectedProductArea(feature.product_area_id.toString());
         let selectedProductArea = ko.observable(feature.product_area_id);
 
         viewModel.clientsFeatures(resp.data.clients_features);
@@ -530,10 +579,10 @@ var featureEditPage = (container, context) => {
 
           setPriorityBoxes(clientPriorityFields, client);
         }
+        setSortableBoxes();
+
       })
-      .catch(( response ) => {
-        makeToast(`Error retrieving feature!`);
-      });
+      .catch(errorHandler);
   };
   retrieve();
   ko.applyBindings(viewModel, container);
@@ -573,25 +622,24 @@ const fetchPage = (templateName, callback, context) => {
 let renderContent = (templateName, callback, ctx, next) => {
   if(ctx.authorized){
     viewModel.logout('Logout');
-    // viewModel.userName(window.localStorage.intuitiveName)
+    viewModel.userName(window.localStorage.intuitiveName);
     page('/');
   }else{
     console.log(viewModel);
     viewModel.logout('');
-    // viewModel.userName('');
+    viewModel.userName('');
     fetchPage(templateName, callback);
   }
 };
 
 let renderAuthContent = (templateName, callback, ctx, next) => {
   if(ctx.authorized){
-    console.log('happy', viewModel);
     viewModel.logout('Logout');
     viewModel.userName(window.localStorage.intuitiveName);
     fetchPage(templateName, callback, ctx);
   }else{
     viewModel.logout('');
-    // viewModel.userName('');
+    viewModel.userName('');
     page('/login');
   }
 };
@@ -625,7 +673,6 @@ window.onSignIn = function(googleUser, e) {
   window.localStorage.setItem('intuitiveName', profile.getName());
   window.localStorage.setItem('intuitiveLogout', 'Logout');
 
-  viewModel.userName = profile.getName();
   var xml = new XMLHttpRequest();
   xml.open("POST", "http://localhost:7777/login/google", true);
   xml.setRequestHeader("Content-Type", "application/json");

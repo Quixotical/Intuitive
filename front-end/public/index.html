@@ -20,12 +20,11 @@
   </head>
   <body>
     <div id="title-container" >
-      <div class="row logout">
-          <div class="col-md-3">
+      <div class="logout" data-bind="if: userName().length > 0">
+          <div>
             <h4>Welcome <span data-bind="text: userName"</h4>
           </div>
-          <div class="col-md-7"></div>
-          <div class="col-md-2 title">
+          <div class="title">
             <h3 id="logout-title"><a data-bind="
               text: logout,
               click: onLogoutClick
