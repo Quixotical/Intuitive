@@ -46,6 +46,7 @@ export default (container) => {
         }
         viewModel.features(resp.data.features);
         viewModel.userFeatures(resp.data.user_features);
+        viewModel.loading('');
 
       })
       .catch(errorHandler)
