@@ -6,7 +6,7 @@ import config
 from itsdangerous import TimedJSONWebSignatureSerializer as JWT
 from flask_httpauth import HTTPTokenAuth
 
-app = Flask(__name__, static_folder='static', static_url_path='')
+app = Flask(__name__)
 cors = CORS(app, resources={r"*": {"origins": "*"}})
 jwt = JWT(config.SECRET_KEY, expires_in=360000)
 auth = HTTPTokenAuth('Bearer')
