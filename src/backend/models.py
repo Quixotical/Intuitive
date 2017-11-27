@@ -1,6 +1,7 @@
 from backend import db
 from backend import app
 from passlib.apps import custom_app_context as pwd_context
+import time
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -58,6 +59,16 @@ class FeatureRequest(db.Model):
             updated_feature.priority = reorder_feature['priority']
             db.session.add(updated_feature)
 
+    def set_feature_fields(self, user, feature_args):
+        if feature_args is not None:
+            self.title = feature_args['title']
+            self.description = feature_args['description']
+            self.client_id =feature_args['client']
+            self.product_area_id = feature_args['product_area']
+            self.target_date = feature_args['target_date']
+            self.priority = feature_args['priority']
+            self.user_id = user.id
+
     def __repr__(self):
         return str({'id':self.id, 'title':self.title, 'description':self.description,
      'priority':self.priority, 'target_date':self.target_date, 'client_id':self.client_id,
@@ -80,8 +91,8 @@ with app.app_context():
                 db.create_all()
                 db.session.commit()
                 loading=False
-            except Exception:
+            except Exception, e:
                 time.sleep(5)
                 wait_time = wait_time + 5
-    except Exception:
-        raise Exception('Error creating the database')
+    except Exception, e:
+        raise Exception('Error creating the database PRESS ctrl + c and rerun docker-compose up' + str(e))
