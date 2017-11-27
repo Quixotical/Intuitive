@@ -1,3 +1,3 @@
 export default axios.create({
-  baseURL: 'http://localhost:7777/'
+  baseURL: 'http://www.quixotical.org:7777/'
 })
