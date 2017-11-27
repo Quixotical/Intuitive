@@ -89,9 +89,14 @@ window.onSignIn = function(googleUser, e) {
   var data = {
     'fullname': profile.getName(),
     'email': profile.getEmail(),
-    'social_id': 'gogole'+profile.getId(),
+    'social_id': 'google'+profile.getId(),
   }
-  window.localStorage.setItem('googleLogin', true);
+  googleUser.disconnect();
+  console.log('pants');
+  if(window.localStorage.googleSignOut){
+    window.localStorage.removeItem('googleSignOut');
+    return;
+  }
   window.localStorage.setItem('intuitiveName', profile.getName())
   window.localStorage.setItem('intuitiveLogout', 'Logout')
 
@@ -110,10 +115,6 @@ window.onSignIn = function(googleUser, e) {
     }
   }
   xml.send(JSON.stringify(data));
-}
-
-window.logout = function() {
-
 }
 
 var viewModel = {
@@ -137,10 +138,12 @@ var viewModel = {
       .then(r => r.json())
       .then((result) => {
         window.localStorage.clear()
+        window.localStorage.setItem('googleSignOut', true)
         page('/login')
       })
       .catch((error) => {
         window.localStorage.clear()
+        window.localStorage.setItem('googleSignOut', true)
         page('/login')
       });
   }
