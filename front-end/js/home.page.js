@@ -50,13 +50,6 @@ export default (container) => {
       })
       .catch(errorHandler)
   }
-
-  if(window.localStorage.googleLogin){
-    window.localStorage.removeItem('googleLogin')
-    window.location.reload();
-  }else{
-    retrieve();
-  }
-
+  
   ko.applyBindings(viewModel, container);
 }
