@@ -9,7 +9,7 @@ export default (container) => {
     submittedFeatureList: ko.observableArray(),
     clientsFeatures: ko.observableArray(),
     currentClient: ko.observable(),
-    targetDate:ko.observable(moment().format('YYYY-MM-DD')),
+    targetDate:ko.observable(moment().format('MMMM Do YYYY')),
     featureTitle: ko.observable(),
     priority: ko.observable(1),
     clients: ko.observableArray(),
@@ -21,9 +21,11 @@ export default (container) => {
     newFeature:ko.observableArray([{id:0, title:'New Title'}]),
 
     getFormattedDate (){
-      return moment(this.targetDate()).format('MM/DD/YYYY');
+      return moment(this.targetDate()).format('MMMM Do YYYY');
     },
-
+    onHomeClick(e) {
+      page('/')
+    },
     checkPriority(knockoutFields, e) {
       let client = knockoutFields.clients().find((client) => {
         return client.id === +e.target.value
@@ -79,12 +81,11 @@ export default (container) => {
     },
 
     onSubmit (formFields) {
-
       let data = {
         title: formFields.featureTitle(),
         description: formFields.description(),
         priority: formFields.priority(),
-        target_date: formFields.targetDate(),
+        target_date: moment(formFields.targetDate(), ['MMMM Do YYYY']).format('YYYY/MM/DD'),
         client: formFields.selectedClient(),
         product_area: formFields.selectedProductArea(),
 
@@ -119,6 +120,11 @@ export default (container) => {
         viewModel.clientsFeatures(resp.data.clients_features)
         viewModel.clients(resp.data.clients);
         viewModel.productAreas(resp.data.product_areas);
+        $( "#datepicker" ).datepicker({
+          onSelect: function getFormattedDate(date, instance) {
+            viewModel.targetDate(moment(date, ['MM/DD/YYYY']).format('MMMM Do YYYY'));
+          }
+        });
       })
       .catch(errorHandler)
   }

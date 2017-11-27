@@ -7,7 +7,9 @@ export default (container) => {
   var viewModel = {
     name: ko.observable(),
     description: ko.observable(),
-
+    onHomeClick(e) {
+      page('/')
+    },
     onSubmit (formFields) {
 
       let data = {

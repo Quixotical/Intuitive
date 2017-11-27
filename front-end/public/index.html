@@ -14,9 +14,8 @@
     <script src="/imported_js/toast.js"></script>
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://apis.google.com/js/platform.js?onload=onLoadCallback async defer"></script>
- <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-
-
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
   </head>
   <body>
     <div id="title-container" >
@@ -33,6 +32,11 @@
       </div>
       <h1>Intuitive Web Solutions</h1>
       <h3>Enhancing your world</h3>
+      <div class="create-buttons" data-bind="if: userName().length > 0">
+        <button class="btn btn-success add-btn" data-bind="click: onAddClient">Add Client</button>
+        <button class="btn btn-success add-btn" data-bind="click: onAddFeature">Add Feature</button>
+        <button class="btn btn-success add-btn" data-bind="click: onAddProductArea">Add Product Area</button>
+      </div>
     </div>
     <hr>
 

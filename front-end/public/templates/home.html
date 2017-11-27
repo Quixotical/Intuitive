@@ -1,6 +1,8 @@
 <div class="home-title-container">
 <h1 class="page-title home">Requested Features</h1>
-<button class="btn btn-success add-feature-btn" data-bind="click: onAddFeature">Add Feature</button>
+</div>
+<div data-bind="if: features().length <= 0">
+  <h2>Click <a href="#" data-bind="click: onAddFeature">here</a> to start adding features!</h2>
 </div>
 <div class="features" data-bind="foreach: features">
   <div class="feature">
@@ -24,20 +26,3 @@
     </div>
   </div>
 </div>
-
-<!-- <div class="features" data-bind="foreach: userFeatures">
-  <div class="row">
-      <div class="col-md-2">Jake Boomgaarden</div>
-      <div class="col-md-9">Feature Number One</div>
-      <div class="col-md-1">10</div>
-  </div>
-  <div class="row">
-      <div class="col-md-4">Client A</div>
-      <div class="col-md-4">Billing</div>
-      <div class="col-md-4">10/10/2017</div>
-  </div>
-  <div class="row">
-      <div class="col-md-8">Description: alsdkfjalksdjfklasjfdlkasdjflaksdfjaklsdfj
-        aksldfjlasdjflkasdjflasdkfjasldkfjalsdkfjdlskjasdlkfjalksdjfalksdfjjlksadfjadlksfasldkfj</div>
-  </div>
-</div> -->

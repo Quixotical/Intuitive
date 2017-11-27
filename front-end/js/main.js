@@ -34,7 +34,8 @@ const fetchPage = (templateName, callback, context) => {
     .then( html => {
       const div = document.createElement('div')
       div.id = 'container'
-      document.querySelector('#container').replaceWith(div);
+      let container = document.querySelector('#container')
+      container.replaceWith(div);
       div.innerHTML = html;
       callback && callback(div, context)
   })
@@ -118,6 +119,15 @@ window.logout = function() {
 var viewModel = {
   userName: ko.observable(''),
   logout: ko.observable(''),
+  onAddFeature(e){
+    page('/feature');
+  },
+  onAddClient(e){
+    page('/client');
+  },
+  onAddProductArea(e){
+    page('/product_area')
+  },
   onLogoutClick () {
     const token = window.localStorage.token
     const headers = { 'Authorization': `Bearer ${token}` }

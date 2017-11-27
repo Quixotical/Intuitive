@@ -7,12 +7,12 @@ export default (container) => {
     features: ko.observableArray(),
     userFeatures: ko.observableArray(),
     loading: ko.observable('Loading'),
-    onAddFeature(e){
-      page('/feature');
-    },
     onEditFeature(item, e){
       e.preventDefault();
       page('/feature/'+ item.id);
+    },
+    onAddFeature(e){
+      page('/feature');
     },
     onDeleteFeature(item, e){
       e.preventDefault();

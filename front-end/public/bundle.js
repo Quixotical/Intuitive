@@ -180,7 +180,7 @@ var featurePage = (container) => {
     submittedFeatureList: ko.observableArray(),
     clientsFeatures: ko.observableArray(),
     currentClient: ko.observable(),
-    targetDate:ko.observable(moment().format('YYYY-MM-DD')),
+    targetDate:ko.observable(moment().format('MMMM Do YYYY')),
     featureTitle: ko.observable(),
     priority: ko.observable(1),
     clients: ko.observableArray(),
@@ -192,9 +192,11 @@ var featurePage = (container) => {
     newFeature:ko.observableArray([{id:0, title:'New Title'}]),
 
     getFormattedDate (){
-      return moment(this.targetDate()).format('MM/DD/YYYY');
+      return moment(this.targetDate()).format('MMMM Do YYYY');
     },
-
+    onHomeClick(e) {
+      page('/');
+    },
     checkPriority(knockoutFields, e) {
       let client = knockoutFields.clients().find((client) => {
         return client.id === +e.target.value
@@ -249,12 +251,11 @@ var featurePage = (container) => {
     },
 
     onSubmit (formFields) {
-
       let data = {
         title: formFields.featureTitle(),
         description: formFields.description(),
         priority: formFields.priority(),
-        target_date: formFields.targetDate(),
+        target_date: moment(formFields.targetDate(), ['MMMM Do YYYY']).format('YYYY/MM/DD'),
         client: formFields.selectedClient(),
         product_area: formFields.selectedProductArea(),
 
@@ -289,6 +290,11 @@ var featurePage = (container) => {
         viewModel.clientsFeatures(resp.data.clients_features);
         viewModel.clients(resp.data.clients);
         viewModel.productAreas(resp.data.product_areas);
+        $( "#datepicker" ).datepicker({
+          onSelect: function getFormattedDate(date, instance) {
+            viewModel.targetDate(moment(date, ['MM/DD/YYYY']).format('MMMM Do YYYY'));
+          }
+        });
       })
       .catch(errorHandler);
   };
@@ -300,7 +306,9 @@ var clientPage = (container) => {
 
   var viewModel = {
     name: ko.observable(),
-
+    onHomeClick(e) {
+      page('/');
+    },
     onSubmit (formFields) {
 
       let data = {
@@ -337,7 +345,9 @@ var productAreaPage = (container) => {
   var viewModel = {
     name: ko.observable(),
     description: ko.observable(),
-
+    onHomeClick(e) {
+      page('/');
+    },
     onSubmit (formFields) {
 
       let data = {
@@ -374,12 +384,12 @@ var homePage = (container) => {
     features: ko.observableArray(),
     userFeatures: ko.observableArray(),
     loading: ko.observable('Loading'),
-    onAddFeature(e){
-      page('/feature');
-    },
     onEditFeature(item, e){
       e.preventDefault();
       page('/feature/'+ item.id);
+    },
+    onAddFeature(e){
+      page('/feature');
     },
     onDeleteFeature(item, e){
       e.preventDefault();
@@ -448,7 +458,9 @@ var featureEditPage = (container, context) => {
     getFormattedDate (){
       return moment(this.targetDate()).format('MM/DD/YYYY');
     },
-
+    onHomeClick(e) {
+      page('/');
+    },
     checkPriority(knockoutFields, e) {
       let client = getClient(knockoutFields.clients(), e.target.value);
 
@@ -465,7 +477,7 @@ var featureEditPage = (container, context) => {
         title: formFields.featureTitle(),
         description: formFields.description(),
         priority: formFields.priority(),
-        target_date: formFields.targetDate(),
+        target_date: moment(formFields.targetDate(), ['MMMM Do YYYY']).format('YYYY/MM/DD'),
         client: formFields.selectedClient(),
         product_area: formFields.selectedProductArea(),
       };
@@ -532,7 +544,6 @@ var featureEditPage = (container, context) => {
     viewModel.clientPriorities([]);
 
     for(let key in clientPriorityFields.clientsFeatures()){
-      console.log('woo');
       key === client.name ? viewModel.clientPriorities(clientPriorityFields.clientsFeatures()[key]) : null;
       key === client.name ? viewModel.currentClient(key): null;
     }
@@ -559,7 +570,7 @@ var featureEditPage = (container, context) => {
 
         viewModel.featureTitle(feature.title);
         viewModel.description(feature.description);
-        viewModel.targetDate(feature.target_date.substr(0,10));
+        viewModel.targetDate(moment(feature.target_date).format('MMMM Do YYYY'));
         viewModel.selectedClient(feature.client_id.toString());
         viewModel.selectedProductArea(feature.product_area_id.toString());
         let selectedProductArea = ko.observable(feature.product_area_id);
@@ -581,6 +592,11 @@ var featureEditPage = (container, context) => {
         }
         setSortableBoxes();
 
+        $( "#datepicker" ).datepicker({
+          onSelect: function getFormattedDate(date, instance) {
+            viewModel.targetDate(moment(date, ['MM/DD/YYYY']).format('MMMM Do YYYY'));
+          }
+        });
       })
       .catch(errorHandler);
   };
@@ -613,7 +629,8 @@ const fetchPage = (templateName, callback, context) => {
     .then( html => {
       const div = document.createElement('div');
       div.id = 'container';
-      document.querySelector('#container').replaceWith(div);
+      let container = document.querySelector('#container');
+      container.replaceWith(div);
       div.innerHTML = html;
       callback && callback(div, context);
   });
@@ -697,6 +714,15 @@ window.logout = function() {
 var viewModel = {
   userName: ko.observable(''),
   logout: ko.observable(''),
+  onAddFeature(e){
+    page('/feature');
+  },
+  onAddClient(e){
+    page('/client');
+  },
+  onAddProductArea(e){
+    page('/product_area');
+  },
   onLogoutClick () {
     const token = window.localStorage.token;
     const headers = { 'Authorization': `Bearer ${token}` };

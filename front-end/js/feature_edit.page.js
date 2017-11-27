@@ -23,7 +23,9 @@ export default (container, context) => {
     getFormattedDate (){
       return moment(this.targetDate()).format('MM/DD/YYYY');
     },
-
+    onHomeClick(e) {
+      page('/')
+    },
     checkPriority(knockoutFields, e) {
       let client = getClient(knockoutFields.clients(), e.target.value)
 
@@ -41,7 +43,7 @@ export default (container, context) => {
         title: formFields.featureTitle(),
         description: formFields.description(),
         priority: formFields.priority(),
-        target_date: formFields.targetDate(),
+        target_date: moment(formFields.targetDate(), ['MMMM Do YYYY']).format('YYYY/MM/DD'),
         client: formFields.selectedClient(),
         product_area: formFields.selectedProductArea(),
       }
@@ -108,7 +110,6 @@ export default (container, context) => {
     viewModel.clientPriorities([]);
 
     for(let key in clientPriorityFields.clientsFeatures()){
-      console.log('woo');
       key === client.name ? viewModel.clientPriorities(clientPriorityFields.clientsFeatures()[key]) : null
       key === client.name ? viewModel.currentClient(key): null
     }
@@ -135,7 +136,7 @@ export default (container, context) => {
 
         viewModel.featureTitle(feature.title);
         viewModel.description(feature.description);
-        viewModel.targetDate(feature.target_date.substr(0,10));
+        viewModel.targetDate(moment(feature.target_date).format('MMMM Do YYYY'));
         viewModel.selectedClient(feature.client_id.toString());
         viewModel.selectedProductArea(feature.product_area_id.toString());
         let selectedProductArea = ko.observable(feature.product_area_id);
@@ -157,6 +158,11 @@ export default (container, context) => {
         }
         setSortableBoxes()
 
+        $( "#datepicker" ).datepicker({
+          onSelect: function getFormattedDate(date, instance) {
+            viewModel.targetDate(moment(date, ['MM/DD/YYYY']).format('MMMM Do YYYY'));
+          }
+        });
       })
       .catch(errorHandler);
   }
