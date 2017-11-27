@@ -1,7 +1,7 @@
 from flask import Flask, g
 from flask_restful import Api, Resource, reqparse, fields, abort
 from flask_sqlalchemy import SQLAlchemy
-import time, datetime, random, string, json, re
+import random, string, json, re
 from passlib.apps import custom_app_context as pwd_context
 from model_helpers import make_jsonifiable, update_model, format_features
 from models import User, ProductArea, Client, FeatureRequest, InvalidatedAuthTokens
@@ -136,14 +136,9 @@ class FeatureRequestAPI(Resource):
         except Exception:
             return {'message': {'error': 'Unable to update feature request at this time'}}, 400
 
-        if features_to_reorder is not None:
-            db.session.commit()
-
         try:
-            feature = FeatureRequest(title=args['title'],description=args['description'],
-                client_id=args['client'], product_area_id=args['product_area'],
-                target_date=args['target_date'],priority=args['priority'],
-                user_id=g.user.id)
+            feature = FeatureRequest()
+            feature.set_feature_fields(g.user, args)
             db.session.add(feature)
             db.session.commit()
             return {'message': 'created'}
@@ -158,12 +153,11 @@ class FeatureRequestAPI(Resource):
             FeatureRequest.reorder_features(features_to_reorder)
         except Exception:
             return {'message': {'error': 'Error updating client features'}}, 400
-        if features_to_reorder is not None:
-            db.session.commit()
 
         update_feature = FeatureRequest.query.filter_by(id=feature_id).first()
         try:
-            update_feature.priority = args['priority']
+            user = g.user
+            update_feature.set_feature_fields(user, args)
             db.session.add(update_feature)
             db.session.commit()
             return {'message': 'updated'}
