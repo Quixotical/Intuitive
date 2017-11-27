@@ -47,7 +47,6 @@ let renderContent = (templateName, callback, ctx, next) => {
     viewModel.userName(window.localStorage.intuitiveName)
     page('/');
   }else{
-    console.log(viewModel);
     viewModel.logout('');
     viewModel.userName('');
     fetchPage(templateName, callback);

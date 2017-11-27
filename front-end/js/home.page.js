@@ -50,6 +50,7 @@ export default (container) => {
       })
       .catch(errorHandler)
   }
-  
+
+  retrieve();
   ko.applyBindings(viewModel, container);
 }

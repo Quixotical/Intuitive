@@ -32,7 +32,6 @@ export default (container) => {
         }
       })
         .then((resp)=> {
-          console.log('woooo')
           page('/');
         })
         .catch(errorHandler)

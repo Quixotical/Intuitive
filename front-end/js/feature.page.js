@@ -33,7 +33,7 @@ export default (container) => {
       let features;
       if (client){
         viewModel.clientPriorities([]);
-        console.log(knockoutFields.newFeature());
+
         for(let key in knockoutFields.clientsFeatures()){
           key === client.name ? viewModel.clientPriorities(knockoutFields.clientsFeatures()[key]) : null
           key === client.name ? viewModel.currentClient(key): null

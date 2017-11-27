@@ -203,7 +203,7 @@ var featurePage = (container) => {
       });
       if (client){
         viewModel.clientPriorities([]);
-        console.log(knockoutFields.newFeature());
+
         for(let key in knockoutFields.clientsFeatures()){
           key === client.name ? viewModel.clientPriorities(knockoutFields.clientsFeatures()[key]) : null;
           key === client.name ? viewModel.currentClient(key): null;
@@ -331,7 +331,6 @@ var clientPage = (container) => {
         }
       })
         .then((resp)=> {
-          console.log('woooo');
           page('/');
         })
         .catch(errorHandler);
@@ -414,6 +413,21 @@ var homePage = (container) => {
     },
   };
 
+  var retrieve = function() {
+    api.get('/', {headers:{Authorization: 'Bearer '+ window.localStorage.token}})
+      .then((resp)=> {
+        let features = resp.data.features;
+        for (let feature of features) {
+          feature.target_date = moment(feature.target_date).format('MM/DD/YYYY');
+        }
+        viewModel.features(resp.data.features);
+        viewModel.userFeatures(resp.data.user_features);
+
+      })
+      .catch(errorHandler);
+  };
+
+  retrieve();
   ko.applyBindings(viewModel, container);
 };
 
@@ -621,7 +635,6 @@ let renderContent = (templateName, callback, ctx, next) => {
     viewModel.userName(window.localStorage.intuitiveName);
     page('/');
   }else{
-    console.log(viewModel);
     viewModel.logout('');
     viewModel.userName('');
     fetchPage(templateName, callback);
