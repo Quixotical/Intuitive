@@ -2,7 +2,7 @@
 'use strict';
 
 var api = axios.create({
-  baseURL: 'http://localhost:7777/'
+  baseURL: 'http://www.quixotical.org:7777/'
 });
 
 class Validator {
@@ -665,17 +665,14 @@ window.onSignIn = function(googleUser, e) {
     'email': profile.getEmail(),
     'social_id': 'google'+profile.getId(),
   };
+
   googleUser.disconnect();
-  console.log('pants');
-  if(window.localStorage.googleSignOut){
-    window.localStorage.removeItem('googleSignOut');
-    return;
-  }
+
   window.localStorage.setItem('intuitiveName', profile.getName());
   window.localStorage.setItem('intuitiveLogout', 'Logout');
 
   var xml = new XMLHttpRequest();
-  xml.open("POST", "http://localhost:7777/login/google", true);
+  xml.open("POST", "http://www.quixotical.org:7777/login/google", true);
   xml.setRequestHeader("Content-Type", "application/json");
   xml.onreadystatechange = function(){
     if(xml.readyState == XMLHttpRequest.DONE){
@@ -684,7 +681,7 @@ window.onSignIn = function(googleUser, e) {
         window.localStorage.setItem('token', response.token);
         page('/index');
       }else{
-        console.warn('oopsie daisie');
+        console.warn('Server issue logging in user');
       }
     }
   };
@@ -712,12 +709,10 @@ var viewModel = {
       .then(r => r.json())
       .then((result) => {
         window.localStorage.clear();
-        window.localStorage.setItem('googleSignOut', true);
         page('/login');
       })
       .catch((error) => {
         window.localStorage.clear();
-        window.localStorage.setItem('googleSignOut', true);
         page('/login');
       });
   }
