@@ -9,7 +9,9 @@ Knockout JS </br>
 
 Below I will go through the steps required to build and run this application. If at any point along the way you run into an issue, please feel free to email me at jake@pomeloproductions.com
 
-*NOTE* if you find yourself unable to run any commands along the way, verify if you need to be using the sudo command or not.
+*NOTE* 
+-if you find yourself unable to run any commands along the way, verify if you need to be using the sudo command or not.
+-if you receive the error "Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?" it is likely that docker is *not* running. To fix this, (on Mac) open up spotlight search and search for "docker" open it and log in if necessary. On windows navigate to the .exe which will start Docker and then run it.
 
 # SETUP
 once you have cloned the repository onto your machine, please do the following to build the app/have it run on your machine.
